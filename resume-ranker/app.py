@@ -2,6 +2,7 @@ import streamlit as st
 from resume_paser import parse_resume
 from jd_parser import parse_jd
 from matcher import calculate_match_score
+from ai_suggester import get_suggestions
 
 st.set_page_config(page_title="AI RESUME RANKER",layout="centered")
 st.title("Resume Ranker AI")
@@ -19,7 +20,10 @@ if st.button("Analyze") and resume_file and job_desc_input:
         st.success(f"Match Score:{score}%")
         st.markdown(f"** Matched Keywords:** {','.join(matched)}")
         st.markdown(f"** Missing Keywords:**{','.join(missing)}")
-
-
+    
+    with st.spinner("Generating AI Suggestions..."):
+        suggestions=get_suggestions(resume_text,job_desc_input)
+        st.markdown("### AI suugestion to Improve your resume")
+        st.info(suggestions)
 elif st.button("Analyze"):
     st.warning("Please upload a resume and paste a job description")

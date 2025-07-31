@@ -1,29 +1,71 @@
 import streamlit as st
-from resume_paser import parse_resume
-from jd_parser import parse_jd
-from matcher import calculate_match_score
 from ai_suggester import get_suggestions
+from matcher import calculate_match_score
+from resume_paser import parse_resume
+import fitz  # PyMuPDF
+from dotenv import load_dotenv
+from streamlit_extras.badges import badge
+import os
 
-st.set_page_config(page_title="AI RESUME RANKER",layout="centered")
-st.title("Resume Ranker AI")
-st.write("Upload your Resume and Job Description to see how well you match!")
+load_dotenv()
 
-resume_file=st.file_uploader("Upload your resume(PDF)",type=["pdf"])
-job_desc_input=st.text_area("Paste the job Description here",height=250)
+st.set_page_config(page_title="Resume Ranker", layout="centered")
+st.title("📄 Resume Ranker with AI")
+st.markdown("Upload your resume and paste the job description to get feedback.")
 
-if st.button("Analyze") and resume_file and job_desc_input:
-    with st.spinner("Analyzing resume...."):
-        resume_text=parse_resume(resume_file)
-        jd_keywords=parse_jd(job_desc_input)
-        score,matched,missing=calculate_match_score(resume_text,jd_keywords)
+# Upload resume
+resume_file = st.file_uploader("📄 Upload Your Resume (PDF)", type=["pdf"])
 
-        st.success(f"Match Score:{score}%")
-        st.markdown(f"** Matched Keywords:** {','.join(matched)}")
-        st.markdown(f"** Missing Keywords:**{','.join(missing)}")
-    
-    with st.spinner("Generating AI Suggestions..."):
-        suggestions=get_suggestions(resume_text,job_desc_input)
-        st.markdown("### AI suugestion to Improve your resume")
-        st.info(suggestions)
-elif st.button("Analyze"):
-    st.warning("Please upload a resume and paste a job description")
+# Job description input
+job_desc_input = st.text_area("🧾 Paste Job Description", height=200)
+
+# Analyze button
+if st.button("🔍 Analyze Resume"):
+    if not resume_file or not job_desc_input:
+        st.warning("Please upload a resume and enter a job description.")
+    else:
+        with st.spinner("Processing..."):
+            try:
+                # Extract text from PDF
+                pdf_doc = fitz.open(stream=resume_file.read(), filetype="pdf")
+                resume_text = ""
+                for page in pdf_doc:
+                    resume_text += page.get_text()
+
+                # Keyword Match
+                matched, missing, score = calculate_match_score(resume_text, job_desc_input)
+                st.markdown(f"### ✅ Match Score: **{score}%**")
+
+                def tagify(words,color):
+                    return " ".join([f"<span style='background-color:{color}; padding:3px 8px; border-radius:8px; color:white; margin:2px; display:inline-block;'>{word}</span>" for word in words])
+                st.markdown("#### ✅ Matched Keywords")
+                st.markdown(tagify(matched,"#28a745"), unsafe_allow_html=True)
+
+                st.markdown("#### ❌ Missing Keywords")
+                st.markdown(tagify(missing,"#dc3545"),unsafe_allow_html=True)
+
+                # AI Suggestions
+                st.markdown("### 🤖 AI Suggestions to Improve Your Resume")
+                result = get_suggestions(resume_text, job_desc_input)
+
+                if result:
+                    sections=result.split("\n")
+                    for line in sections:
+                        line=line.strip()
+                        if line.lower().startswith("score"):
+                            st.markdown(f"#### {line}")
+                        elif "strength" in line.lower():
+                            st.markdown(f"#### {line}")
+                        elif "suggestions" in line.lower():
+                            st.markdown(f"#### {line}")
+                        else:
+                            st.markdown(line)
+                
+                else:
+                    st.info("AI did not return a detailed suggestion.")
+            except Exception as e:
+                st.error(f"Something went wrong: {e}")
+
+# Footer
+st.markdown("---")
+st.markdown("Built with ❤️ using Streamlit + Groq + LLMs by Abhishek")

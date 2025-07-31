@@ -1,7 +1,12 @@
 
-def calculate_match_score(resume_text,jd_keywords):
-    resume_words=set(resume_text.split())
-    matched=[kw for kw in jd_keywords if kw in resume_words]
-    missing=[kw for kw in jd_keywords if kw not in resume_words]
-    score=int((len(matched)/len(jd_keywords))*100) if jd_keywords else 0
-    return score,matched,missing
+def calculate_match_score(resume_text,job_description):
+    resume_words = set(resume_text.lower().split())
+    jd_words = set(job_description.lower().split())
+
+    matched = list(jd_words & resume_words)
+    missing = list(jd_words - resume_words)
+
+    total = len(jd_words)
+    score = round((len(matched) / total) * 100) if total > 0 else 0
+
+    return matched, missing, score

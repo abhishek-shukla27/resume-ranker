@@ -46,7 +46,9 @@ if st.button("🔍 Analyze Resume"):
 
                 # AI Suggestions
                 st.markdown("### 🤖 AI Suggestions to Improve Your Resume")
-                result = get_suggestions(resume_text, job_desc_input)
+                result = get_suggestions(resume_text.strip(), job_desc_input.strip())
+                st.text("🧪 DEBUG: resume length: " + str(len(resume_text)))
+                st.text("🧪 DEBUG: job desc length: " + str(len(job_desc_input)))
 
                 if result:
                     sections=result.split("\n")

@@ -2,39 +2,46 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 
-load_dotenv()
-groq_api_key = os.getenv("GROQ_API_KEY")
+load_dotenv()  # Load .env file (for local dev)
 
-def get_suggestions(resume_text: str, job_description: str) -> str:
-    client = Groq(api_key=groq_api_key)
+def get_suggestions(resume_text, job_description):
+    try:
+        # Fetch Groq API key from environment
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            return "❌ Error: GROQ_API_KEY not found in environment."
 
-    system_message = (
-        "You are a strict and concise resume evaluation AI. "
-        "Do not ask for the resume or job description again. "
-        "Only respond with score, strengths, and improvement suggestions."
-    )
+        # Initialize Groq client
+        client = Groq(api_key=api_key)
 
-    prompt = f"""
-Compare the following resume and job description and return:
-
-1. **Score:** x/10  
-2. **Strengths:** (2-3 lines)  
-3. **Suggestions:** (3-5 bullet points to improve)
+        # Construct the prompt
+        prompt = f"""
+You are a helpful AI assistant reviewing a resume for a job application. Your job is to evaluate the resume against the job description and provide suggestions.
 
 Resume:
 {resume_text}
 
 Job Description:
 {job_description}
+
+Give your feedback in the following format:
+✅ Match Score (out of 10)
+⭐ Strengths
+🛠️ Areas to Improve
+📢 Overall Suggestion
 """
 
-    response = client.chat.completions.create(
-        model="llama3-70b-8192",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7,
-    )
+        # Send to LLM
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",  # ✅ Use non-deprecated model
+            messages=[
+                {"role": "system", "content": "You are a helpful resume evaluator."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
 
-    return response.choices[0].message.content.strip()
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"❌ AI Suggestion Failed: {str(e)}"

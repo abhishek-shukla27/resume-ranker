@@ -32,7 +32,7 @@ if st.sidebar.button("Logout"):
 
 
 if not firebase_admin._apps:
-    cred=credentials.Certificate("resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73")
+    cred=credentials.Certificate("resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json")
     firebase_admin.initialize_app(cred)
 
     def verify_token(id_token):

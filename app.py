@@ -43,12 +43,13 @@ if not firebase_admin._apps:
             st.error("Invalid or expired token.")
             return None
     
-query_params=st.experimental_get_query_params()
+query_params=st.query_params
 if "token" in query_params:
     id_token=query_params["token"][0]
     user_info=verify_token(id_token)
     if user_info:
         st.session_state["user"]=user_info
+        st.session_state["token"]=id_token
         st.success(f"Welcome {user_info['email']}!")
     else:
         st.stop()

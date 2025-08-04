@@ -13,50 +13,42 @@ from urllib.parse import urlparse,parse_qs
 from firebase_config import auth
 import os
 
-#----Session Management-----#
+FIREBASE_JSON_PATH = "resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json"
+
+# ✅ Initialize Firebase Admin SDK (only once)
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_JSON_PATH)
+    firebase_admin.initialize_app(cred)
+
+# ✅ Function to verify token
+def verify_token(id_token):
+    try:
+        decoded = admin_auth.verify_id_token(id_token)
+        return decoded
+    except Exception as e:
+        st.error("❌ Invalid or expired token.")
+        st.stop()
+
+# ✅ Get token from query params and verify
 query_params = st.query_params
-if "token" in query_params:
-    token=query_params["token"][0]
-    st.session_state["token"]=token
+if "token" in query_params and "user" not in st.session_state:
+    id_token = query_params["token"]
+    user = verify_token(id_token)
+    st.session_state["user"] = user
+    st.session_state["token"] = id_token
 
-is_logged_in="token" in st.session_state
-
-if not is_logged_in:
-    st.warning("Please login in to use Resume Ranker.")
+# ✅ Check login
+if "user" not in st.session_state:
+    st.warning("Please log in to use Resume Ranker.")
+    st.markdown("[Login with Google](https://resume-ranker-auth.web.app/)")
     st.stop()
 
-st.sidebar.success("✅ Logged in")
+# ✅ Logged in
+st.sidebar.success(f"✅ Logged in as {st.session_state['user']['email']}")
 if st.sidebar.button("Logout"):
     st.session_state.clear()
     st.experimental_rerun()
 
-
-if not firebase_admin._apps:
-    cred=credentials.Certificate("resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json")
-    firebase_admin.initialize_app(cred)
-
-def verify_token(id_token):
-    try:
-        decoded_token=admin_auth.verify_id_token(id_token)
-        return decoded_token
-    except Exception as e:
-        st.error("Invalid or expired token.")
-        return None
-    
-query_params=st.query_params
-if "token" in query_params:
-    id_token=query_params["token"][0]
-    user_info=verify_token(id_token)
-    if user_info:
-        st.session_state["user"]=user_info
-        st.session_state["token"]=id_token
-        st.success(f"Welcome {user_info['email']}!")
-    else:
-        st.stop()
-
-elif "user" not in st.session_state:
-    st.markdown("[Click here to login with Google]")
-    st.stop()
 
 load_dotenv()
 

@@ -35,13 +35,13 @@ if not firebase_admin._apps:
     cred=credentials.Certificate("resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json")
     firebase_admin.initialize_app(cred)
 
-    def verify_token(id_token):
-        try:
-            decoded_token=admin_auth.verify_id_token(id_token)
-            return decoded_token
-        except Exception as e:
-            st.error("Invalid or expired token.")
-            return None
+def verify_token(id_token):
+    try:
+        decoded_token=admin_auth.verify_id_token(id_token)
+        return decoded_token
+    except Exception as e:
+        st.error("Invalid or expired token.")
+        return None
     
 query_params=st.query_params
 if "token" in query_params:
@@ -53,7 +53,7 @@ if "token" in query_params:
         st.success(f"Welcome {user_info['email']}!")
     else:
         st.stop()
-    
+
 elif "user" not in st.session_state:
     st.markdown("[Click here to login with Google]")
     st.stop()

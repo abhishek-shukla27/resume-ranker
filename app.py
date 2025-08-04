@@ -53,7 +53,7 @@ if st.sidebar.button("Logout"):
 
 load_dotenv()
 
-st.set_page_config(page_title="Resume Ranker", layout="centered")
+
 st.title("📄 Resume Ranker with AI")
 st.markdown("Upload your resume and paste the job description to get feedback.")
 

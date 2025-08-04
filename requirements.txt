@@ -3,3 +3,4 @@ python-dotenv==1.0.1
 groq==0.30.0
 PyMuPDF
 streamlit-extras
+firebase_admin

@@ -2,8 +2,10 @@
 .env
 .venv/
 venv/
-#
-resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73
+
+
+resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json:1
+.json
 
 .firebase/
 .firebaserc

@@ -5,3 +5,6 @@ PyMuPDF
 streamlit-extras
 firebase-admin
 pyrebase4
+pycryptodome
+setuptools
+google-cloud-storage

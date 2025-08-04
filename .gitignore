@@ -1,2 +1,14 @@
+#GROQ_API_KEY
 .env
-.venv
+.venv/
+venv/
+#
+resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73
+
+.firebase/
+.firebaserc
+
+.DS_Store
+
+__pycache__/
+*.pyc

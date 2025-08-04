@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Ranker - Sign In</title>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      color: white;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #ffffff10;
+      backdrop-filter: blur(20px);
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    button {
+      background: white;
+      color: #2a5298;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #e0e0e0;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    .google-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🚀 Resume Ranker</h2>
+    <p style="margin-bottom: 25px;">Sign in using your Google account to continue.</p>
+    <button class="google-btn" onclick="googleLogin()">
+        <img class="google-icon" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo"/>Sign in with Google</button>
+    <div class="footer">Your resume, ranked smarter ⚡</div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCCVBc3388j3AI-IbVukcuMuMwV6aC4Zg",
+      authDomain: "resume-ranker-auth.firebaseapp.com",
+      databaseURL: "https://resume-ranker-auth-default-rtdb.firebaseio.com",
+      projectId: "resume-ranker-auth",
+      storageBucket: "resume-ranker-auth.appspot.com",
+      messagingSenderId: "742749728226",
+      appId: "1:742749728226:web:2b14afab6fd3614a8c5dbb"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    function googleLogin() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(result => {
+          result.user.getIdToken().then(token => {
+            window.location.href = "https://resume-ranker-bw68qvf7xhv5mtbzpdrbe2.streamlit.app/?token=" + token;
+          });
+        })
+        .catch(error => {
+          alert("Login failed. Check the console.");
+          console.error(error);
+        });
+    }
+  </script>
+</body>
+</html>

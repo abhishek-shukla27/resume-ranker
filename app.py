@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="Resume Ranker", layout="centered")
 from ai_suggester import get_suggestions
 from matcher import calculate_match_score
 from resume_paser import parse_resume

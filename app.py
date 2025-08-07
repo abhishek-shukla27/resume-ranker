@@ -52,7 +52,33 @@ if st.sidebar.button("Logout"):
 
 
 load_dotenv()
-
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton, .viewerBadge_link__qRIco {display: none;}
+    body {
+        background-color: #f0f4f8;
+    }
+    .stButton>button {
+        background-color: #0066ff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+    }
+    .stTextArea textarea, .stFileUploader, .stTextInput input {
+        background-color: white;
+        color: #333;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+    .stMarkdown h1, h2, h3 {
+        color: #222;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("📄 Resume Ranker with AI")
 st.markdown("Upload your resume and paste the job description to get feedback.")

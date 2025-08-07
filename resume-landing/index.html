@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Ranker - Optimize Your Resume with AI</title>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    header {
+      background-color: #4CAF50;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      font-size: 2rem;
+    }
+
+    section {
+      padding: 50px 20px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 12px 25px;
+      font-size: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #45a049;
+    }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 40px;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    .how-it-works {
+      background-color: #eef6f0;
+    }
+
+    .footer {
+      background-color: #222;
+      color: #aaa;
+      text-align: center;
+      padding: 20px;
+    }
+
+    @media screen and (max-width: 600px) {
+      .feature-card {
+        width: 90%;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    Resume Ranker
+  </header>
+
+  <section class="hero">
+    <h1>AI-Powered Resume Optimizer</h1>
+    <p>Upload your resume + job description. Let AI do the rest.</p>
+    <button class="google-btn" onclick="signInWithGoogle()">Login with Google</a>
+  </section>
+
+  <section class="features">
+    <div class="feature-card">
+      <h3>📄 Resume Analysis</h3>
+      <p>Upload your resume in PDF format and get keyword insights.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🔍 JD Matching</h3>
+      <p>See matched and missing keywords compared to the job description.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🤖 AI Suggestions</h3>
+      <p>Get real-time suggestions to improve your resume using LLMs.</p>
+    </div>
+  </section>
+
+  <section class="how-it-works">
+    <h2>How It Works</h2>
+    <p>Just 3 simple steps to get your resume optimized:</p>
+    <ul style="list-style-type: none;">
+      <li>🔐 Login with Google</li>
+      <li>📄 Upload Resume + Paste JD</li>
+      <li>📊Get Score + Suggestions</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Free vs Premium</h2>
+    <p><strong>Free:</strong> Score, Keywords, Suggestions</p>
+    <p><strong>Premium (coming soon):</strong> Auto-Improved Resume + Download PDF</p>
+    <button class="btn" disabled>Premium Coming Soon</button>
+  </section>
+
+  <footer class="footer">
+    Built with ❤️ using Streamlit + Groq + LLMs by Abhishek
+  </footer>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCCVBc3388j3AI-IbVukcuMuMwV6aC4Zg",
+      authDomain: "resume-ranker-auth.firebaseapp.com",
+      databaseURL: "https://resume-ranker-auth-default-rtdb.firebaseio.com",
+      projectId: "resume-ranker-auth",
+      storageBucket: "resume-ranker-auth.appspot.com",
+      messagingSenderId: "742749728226",
+      appId: "1:742749728226:web:2b14afab6fd3614a8c5dbb"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const auth = firebase.auth();
+
+    function signInWithGoogle() {
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          // ✅ Get the correct token
+          result.user.getIdToken(/* forceRefresh */ true).then(function (idToken) {
+            // ✅ Redirect to Streamlit app with valid token
+            console.log("Id token", idToken)
+            window.location.href = "https://resume-ranker-bw68qvf7xhv5mtbzpdrbe2.streamlit.app/?token=" + idToken;
+          });
+        })
+        .catch((error) => {
+          alert("Login Failed: " + error.message);
+        });
+    }
+  </script>
+
+</body>
+
+</html>

@@ -59,7 +59,7 @@ st.markdown("""
     header {visibility: hidden;}
     .stDeployButton, .viewerBadge_link__qRIco {display: none;}
     body {
-        background-color: #f0f4f8;
+        background-color: white;
     }
     .stButton>button {
         background-color: #0066ff;

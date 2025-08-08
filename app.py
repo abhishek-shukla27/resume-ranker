@@ -1,176 +1,160 @@
 import streamlit as st
-st.set_page_config(page_title="Resume Ranker", layout="centered")
-from ai_suggester import get_suggestions
-from matcher import calculate_match_score
-from resume_paser import parse_resume
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
-from streamlit_extras.badges import badge
-import firebase_admin 
-import requests
-from firebase_admin import credentials ,auth as admin_auth
-import urllib.parse
-from urllib.parse import urlparse,parse_qs
-from firebase_config import auth
+import firebase_admin
+from firebase_admin import credentials, auth as admin_auth
+from matcher import calculate_match_score
+from ai_suggester import get_suggestions
 import os
 
-FIREBASE_JSON_PATH = "resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json"
+# ---------------- CONFIG ----------------
+st.set_page_config(page_title="Resume Ranker", page_icon="📄", layout="wide", initial_sidebar_state="collapsed")
+load_dotenv()
 
-# ✅ Initialize Firebase Admin SDK (only once)
+FIREBASE_JSON_PATH = "resume-ranker-auth-firebase-adminsdk-fbsvc-16ac3f1d73.json"
+LOGIN_URL = "https://resume-ranker-auth.web.app/"
+
+# ------------- CSS Styling (Glassmorphism) --------------
+glass_css = """
+<style>
+/* Hide Streamlit default menu and footer */
+#MainMenu, header, footer {visibility: hidden;}
+
+/* Background */
+.stApp {
+    background: linear-gradient(135deg, rgba(240,240,255,1) 0%, rgba(225,245,255,1) 100%);
+    background-attachment: fixed;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Glass card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Headings */
+h1, h2, h3 {
+    text-align: center;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(90deg, #4f46e5, #3b82f6);
+    color: white;
+    padding: 12px 28px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: none;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: 0.3s ease;
+}
+.stButton > button:hover {
+    background: linear-gradient(90deg, #4338ca, #2563eb);
+}
+
+/* Textarea */
+textarea {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #111827 !important;
+    padding: 12px !important;
+    font-size: 16px !important;
+}
+
+/* Keyword tags */
+.keyword-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 4px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: white;
+}
+
+</style>
+"""
+st.markdown(glass_css, unsafe_allow_html=True)
+
+# ---------------- FIREBASE INIT ----------------
 if not firebase_admin._apps:
     cred = credentials.Certificate(FIREBASE_JSON_PATH)
     firebase_admin.initialize_app(cred)
 
-# ✅ Function to verify token
 def verify_token(id_token):
     try:
         decoded = admin_auth.verify_id_token(id_token)
         return decoded
-    except Exception as e:
-        st.error("❌ Invalid or expired token.")
-        st.stop()
+    except:
+        return None
 
-# ✅ Get token from query params and verify
+# ---------------- SESSION LOGIN ----------------
 query_params = st.query_params
 if "token" in query_params and "user" not in st.session_state:
-    id_token = query_params["token"]
-    user = verify_token(id_token)
-    st.session_state["user"] = user
-    st.session_state["token"] = id_token
+    token = query_params["token"]
+    user = verify_token(token)
+    if user:
+        st.session_state["user"] = user
+        st.session_state["token"] = token
 
-# ✅ Check login
+# ---------------- LANDING PAGE ----------------
 if "user" not in st.session_state:
-    st.warning("Please log in to use Resume Ranker.")
-    st.markdown("[Login with Google](https://resume-ranker-auth.web.app/)")
+    st.markdown("<h1>📄 Resume Ranker</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:18px; color:gray;'>AI-powered resume optimization — upload, match, and improve your resume for specific job descriptions.</p>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align:center;'><a href='{LOGIN_URL}' style='background:linear-gradient(90deg,#4f46e5,#3b82f6);padding:14px 32px;color:white;border-radius:12px;text-decoration:none;font-weight:bold;'>Login with Google</a></div>", unsafe_allow_html=True)
     st.stop()
 
-# ✅ Logged in
+# ---------------- ANALYZER PAGE ----------------
 st.sidebar.success(f"✅ Logged in as {st.session_state['user']['email']}")
 if st.sidebar.button("Logout"):
     st.session_state.clear()
     st.experimental_rerun()
 
+st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+st.markdown("<h1>📄 Resume Ranker with AI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:18px; color:#334155;'>Upload your resume & paste the job description to get a score and improvement suggestions.</p>", unsafe_allow_html=True)
 
-load_dotenv()
-st.markdown("""
-<style>
-/* Background */
-.main {
-    background-color: linear-gradient(to right, #10131a, #1f2937);
-    color: #ffffff;
-    font-family: 'Inter', sans-serif;
-}
-header {
-      padding: 20px 5%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: transparent;
-    }
-
-/* Title */
-h1, h2, h3, h4 {
-    font-weight: 600;
-    color: #1a1a1a;
-}
-
-/* Text Area */
-textarea {
-    background-color: #333333 !important;
-    color: #ffffff !important;
-    border: 2px solid #d1d5db !important;
-    border-radius: 12px !important;
-    padding: 15px !important;
-    font-size: 15px !important;
-}
-
-/* File uploader */
-.stFileUploader {
-    border: 2px dashed #4f46e5 !important;
-    background-color: #f5f3ff !important;
-    border-radius: 15px !important;
-}
-
-/* Buttons */
-.stButton > button {
-    background-color: #4f46e5 !important;
-    color: white !important;
-    font-size: 16px !important;
-    padding: 10px 25px !important;
-    border-radius: 10px !important;
-    border: none !important;
-    transition: all 0.3s ease-in-out;
-}
-
-.stButton > button:hover {
-    background-color: #4338ca !important;
-}
-
-/* Keyword tags */
-span {
-    font-size: 13px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-st.title("📄 Resume Ranker with AI")
-st.markdown("Upload your resume and paste the job description to get feedback.")
-
-# Upload resume
 resume_file = st.file_uploader("📄 Upload Your Resume (PDF)", type=["pdf"])
+job_desc_input = st.text_area("🧾 Paste Job Description", height=200, placeholder="Paste the job description here...")
 
-# Job description input
-job_desc_input = st.text_area("🧾 Paste Job Description", height=200)
-
-# Analyze button
 if st.button("🔍 Analyze Resume"):
     if not resume_file or not job_desc_input:
         st.warning("Please upload a resume and enter a job description.")
     else:
         with st.spinner("Processing..."):
             try:
-                # Extract text from PDF
+                # Extract resume text
                 pdf_doc = fitz.open(stream=resume_file.read(), filetype="pdf")
-                resume_text = ""
-                for page in pdf_doc:
-                    resume_text += page.get_text()
+                resume_text = "".join([page.get_text() for page in pdf_doc])
 
-                # Keyword Match
                 matched, missing, score = calculate_match_score(resume_text, job_desc_input)
-                st.markdown(f"### ✅ Match Score: **{score}%**")
+                st.markdown(f"<h3>✅ Match Score: {score}%</h3>", unsafe_allow_html=True)
 
-                def tagify(words,color):
-                    return " ".join([f"<span style='background-color:{color}; padding:3px 8px; border-radius:8px; color:white; margin:2px; display:inline-block;'>{word}</span>" for word in words])
+                def tagify(words, color):
+                    return " ".join([f"<span class='keyword-tag' style='background:{color};'>{word}</span>" for word in words])
+
                 st.markdown("#### ✅ Matched Keywords")
-                st.markdown(tagify(matched,"#28a745"), unsafe_allow_html=True)
+                st.markdown(tagify(matched, "#16a34a"), unsafe_allow_html=True)
 
                 st.markdown("#### ❌ Missing Keywords")
-                st.markdown(tagify(missing,"#dc3545"),unsafe_allow_html=True)
+                st.markdown(tagify(missing, "#dc2626"), unsafe_allow_html=True)
 
-                # AI Suggestions
-                st.markdown("### 🤖 AI Suggestions to Improve Your Resume")
+                st.markdown("### 🤖 AI Suggestions")
                 result = get_suggestions(resume_text.strip(), job_desc_input.strip())
-            
-
                 if result:
-                    sections=result.split("\n")
-                    for line in sections:
-                        line=line.strip()
-                        if line.lower().startswith("score"):
-                            st.markdown(f"#### {line}")
-                        elif "strength" in line.lower():
-                            st.markdown(f"#### {line}")
-                        elif "suggestions" in line.lower():
-                            st.markdown(f"#### {line}")
-                        else:
-                            st.markdown(line)
-                
+                    st.markdown(f"<div style='background:rgba(255,255,255,0.2);padding:15px;border-radius:12px;'>{result}</div>", unsafe_allow_html=True)
                 else:
-                    st.info("AI did not return a detailed suggestion.")
+                    st.info("No suggestions returned.")
             except Exception as e:
-                st.error(f"Something went wrong: {e}")
+                st.error(f"Error: {e}")
 
-# Footer
-st.markdown("---")
-st.markdown("Built using Streamlit + Groq + LLMs by Abhishek")
+st.markdown("</div>", unsafe_allow_html=True)

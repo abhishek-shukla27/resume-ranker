@@ -53,32 +53,58 @@ if st.sidebar.button("Logout"):
 
 load_dotenv()
 st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton, .viewerBadge_link__qRIco {display: none;}
-    body {
-        background-color: white;
-    }
-    .stButton>button {
-        background-color: #0066ff;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        border: none;
-    }
-    .stTextArea textarea, .stFileUploader, .stTextInput input {
-        background-color: white;
-        color: #333;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-    }
-    .stMarkdown h1, h2, h3 {
-        color: #222;
-    }
-    </style>
+<style>
+/* Background */
+.main {
+    background-color: #f9fafc;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Title */
+h1, h2, h3, h4 {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* Text Area */
+textarea {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    border: 2px solid #d1d5db !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    font-size: 15px !important;
+}
+
+/* File uploader */
+.stFileUploader {
+    border: 2px dashed #4f46e5 !important;
+    background-color: #f5f3ff !important;
+    border-radius: 15px !important;
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: #4f46e5 !important;
+    color: white !important;
+    font-size: 16px !important;
+    padding: 10px 25px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    transition: all 0.3s ease-in-out;
+}
+
+.stButton > button:hover {
+    background-color: #4338ca !important;
+}
+
+/* Keyword tags */
+span {
+    font-size: 13px;
+}
+</style>
 """, unsafe_allow_html=True)
+
 
 st.title("📄 Resume Ranker with AI")
 st.markdown("Upload your resume and paste the job description to get feedback.")

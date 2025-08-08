@@ -68,7 +68,7 @@ h1, h2, h3, h4 {
 
 /* Text Area */
 textarea {
-    background-color: #ffffff !important;
+    background-color: #333333 !important;
     color: #333333 !important;
     border: 2px solid #d1d5db !important;
     border-radius: 12px !important;
@@ -165,4 +165,4 @@ if st.button("🔍 Analyze Resume"):
 
 # Footer
 st.markdown("---")
-st.markdown("Built with ❤️ using Streamlit + Groq + LLMs by Abhishek")
+st.markdown("Built using Streamlit + Groq + LLMs by Abhishek")

@@ -56,7 +56,8 @@ st.markdown("""
 <style>
 /* Background */
 .main {
-    background-color: #f9fafc;
+    background-color: linear-gradient(to right, #10131a, #1f2937);
+    color: #ffffff;
     font-family: 'Inter', sans-serif;
 }
 

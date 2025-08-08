@@ -7,6 +7,8 @@ import firebase_admin
 from firebase_admin import credentials, auth as admin_auth
 import os
 import io
+import tempfile
+from ai_suggester import get_suggestions
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -123,9 +125,15 @@ if st.button("🔍 Analyze Resume"):
     else:
         with st.spinner("Processing..."):
             try:
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                    tmp.write(resume_file.read())
+                    uploaded_path = tmp.name
                 # Extract text from PDF
-                pdf_doc = fitz.open(stream=resume_file.read(), filetype="pdf")
-                resume_text = "".join([page.get_text() for page in pdf_doc])
+                pdf_doc = fitz.open(uploaded_path)
+                resume_text = ""
+                for page in pdf_doc:
+                    resume_text+=page.get_text()
 
                 # Keyword Match
                 matched, missing, score = calculate_match_score(resume_text, job_desc_input)
@@ -148,23 +156,29 @@ if st.button("🔍 Analyze Resume"):
                 else:
                     st.info("AI did not return a detailed suggestion.")
 
-                updated_resume_path="updated_resume.pdf"
-                styles = getSampleStyleSheet()
-                doc = SimpleDocTemplate(updated_resume_path, pagesize=A4)
-                elements = []
-                elements.append(Paragraph("Updated Resume", styles["Title"]))
-                elements.append(Spacer(1, 12))
-                elements.append(Paragraph(resume_text, styles["Normal"]))
-                doc.build(elements)
                 
+                for page in pdf_doc:
+                    for word in matched:
+                        matches=page.search_for(word)
+                        for match in matches:
+                            page.add_highlight_annot(match)
+                
+                suggestion_page = pdf_doc.new_page()
+                suggestion_text = "AI Suggestions to Improve Your Resume:\n\n" + "\n".join(f"- {s}" for s in suggestions)
+                suggestion_page.insert_text((50, 50), suggestion_text, fontsize=12, fontname="helv")
+                
+                updated_resume_path = os.path.join(tempfile.gettempdir(), "Updated_Resume.pdf")
+                pdf_doc.save(updated_resume_path)
+
+                # Offer download
                 with open(updated_resume_path, "rb") as f:
                     st.download_button(
                         label="📥 Download Updated Resume",
                         data=f,
                         file_name="Updated_Resume.pdf",
-                        mime="application/pdf",
+                        mime="application/pdf"
                     )
-
+            
             except Exception as e:
                 st.error(f"Something went wrong: {e}")
 

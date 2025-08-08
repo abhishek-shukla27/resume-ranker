@@ -8,3 +8,4 @@ pyrebase4
 pycryptodome
 setuptools
 google-cloud-storage
+reportlab

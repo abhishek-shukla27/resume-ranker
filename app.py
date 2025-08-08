@@ -60,6 +60,13 @@ st.markdown("""
     color: #ffffff;
     font-family: 'Inter', sans-serif;
 }
+header {
+      padding: 20px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: transparent;
+    }
 
 /* Title */
 h1, h2, h3, h4 {
@@ -70,7 +77,7 @@ h1, h2, h3, h4 {
 /* Text Area */
 textarea {
     background-color: #333333 !important;
-    color: #333333 !important;
+    color: #ffffff !important;
     border: 2px solid #d1d5db !important;
     border-radius: 12px !important;
     padding: 15px !important;

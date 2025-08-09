@@ -8,7 +8,7 @@ from firebase_admin import credentials, auth as admin_auth
 import os
 import io
 import tempfile
-from ai_suggester import get_suggestions
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -156,6 +156,8 @@ if st.button("🔍 Analyze Resume"):
                 else:
                     st.info("AI did not return a detailed suggestion.")
 
+                ai_suggestions_raw = get_suggestions(resume_text.strip(), job_desc_input.strip())
+                suggestions = [line.strip() for line in ai_suggestions_raw.split("\n") if line.strip()]
                 
                 for page in pdf_doc:
                     for word in matched:

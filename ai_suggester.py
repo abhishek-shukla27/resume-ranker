@@ -76,8 +76,8 @@ def rewrite_resume_for_job(resume_text,job_desc):
     headers={"Authorization":f"Bearer {API_KEY}","Content-Type":"application/json"}
     payload={
         "model":MODEL_NAME,
-        "message":[{"role":"user","content":prompt}],
-        "temprature":0.4,
+        "messages":[{"role":"user","content":prompt}],
+        "temperature":0.4,
     }
 
     try:

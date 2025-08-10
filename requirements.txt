@@ -9,3 +9,4 @@ pycryptodome
 setuptools
 google-cloud-storage
 reportlab
+python-docx

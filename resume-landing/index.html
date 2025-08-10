@@ -1,145 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Resume Ranker - Optimize Your Resume with AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Ranker</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <style>
-    body {
+    * {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f9f9f9;
-      color: #333;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to right, #10131a, #1f2937);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
-      background-color: #4CAF50;
-      padding: 20px;
-      text-align: center;
-      color: white;
-      font-size: 2rem;
+      padding: 20px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: transparent;
     }
 
-    section {
-      padding: 50px 20px;
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #00ffd1;
+    }
+
+    nav a {
+      margin-left: 30px;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #00ffd1;
+    }
+
+    .hero {
+      flex: 1;
+      padding: 60px 5%;
       text-align: center;
     }
 
     .hero h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
+      font-size: 3.5rem;
+      background: linear-gradient(90deg, #00ffd1, #00bcd4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
     }
 
     .hero p {
       font-size: 1.2rem;
-      margin-bottom: 20px;
+      color: #cfcfcf;
+      margin-bottom: 40px;
     }
 
-    .btn {
-      padding: 12px 25px;
-      font-size: 1rem;
-      background-color: #4CAF50;
-      color: white;
+    .cta-button {
+      background: #00ffd1;
+      color: #000000;
+      padding: 14px 30px;
+      font-size: 1.1rem;
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      transition: all 0.3s;
       text-decoration: none;
     }
 
-    .btn:hover {
-      background-color: #45a049;
+    .cta-button:hover {
+      background: #00bcd4;
     }
 
     .features {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      padding: 60px 5%;
+      background: #0e1117;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 30px;
-      margin-top: 40px;
+      text-align: center;
     }
 
-    .feature-card {
-      background: white;
-      padding: 20px;
+    .feature {
+      background: #1f2937;
+      padding: 30px 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      width: 300px;
+      border: 1px solid #2c3e50;
+      transition: transform 0.3s ease;
     }
 
-    .how-it-works {
-      background-color: #eef6f0;
+    .feature:hover {
+      transform: translateY(-5px);
     }
 
-    .footer {
-      background-color: #222;
+    .feature h3 {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      color: #00ffd1;
+    }
+
+    .feature p {
+      font-size: 0.95rem;
+      color: #cfcfcf;
+    }
+
+    footer {
+      background-color: #10131a;
       color: #aaa;
       text-align: center;
       padding: 20px;
+      font-size: 0.9rem;
     }
 
-    @media screen and (max-width: 600px) {
-      .feature-card {
-        width: 90%;
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 2.5rem;
       }
 
-      .hero h1 {
-        font-size: 2rem;
+      .cta-button {
+        font-size: 1rem;
+        padding: 12px 24px;
       }
     }
   </style>
 </head>
-
 <body>
-
   <header>
-    Resume Ranker
+    <div class="logo">Resume Ranker</div>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="https://resume-ranker-auth.web.app/">Sign Up</a>
+    </nav>
   </header>
 
   <section class="hero">
-    <h1>AI-Powered Resume Optimizer</h1>
-    <p>Upload your resume + job description. Let AI do the rest.</p>
-    <button class="google-btn" onclick="signInWithGoogle()">Login with Google</a>
+    <h1>Boost Your Resume Instantly</h1>
+    <p>Upload your resume, paste the job description, and let AI enhance your job match potential.</p>
+    <button class="cta-button" onclick="signInWithGoogle()">Log In with Google</button>
   </section>
 
-  <section class="features">
-    <div class="feature-card">
-      <h3>📄 Resume Analysis</h3>
-      <p>Upload your resume in PDF format and get keyword insights.</p>
+  <section class="features" id="features">
+    <div class="feature">
+      <h3>📄 Smart Resume Parsing</h3>
+      <p>Upload your PDF resume and let AI extract everything cleanly for analysis.</p>
     </div>
-    <div class="feature-card">
-      <h3>🔍 JD Matching</h3>
-      <p>See matched and missing keywords compared to the job description.</p>
+    <div class="feature">
+      <h3>📊 ATS Match Score</h3>
+      <p>Get a detailed ATS score to understand how well your resume fits the job.</p>
     </div>
-    <div class="feature-card">
-      <h3>🤖 AI Suggestions</h3>
-      <p>Get real-time suggestions to improve your resume using LLMs.</p>
+    <div class="feature">
+      <h3>🤖 AI-Powered Suggestions</h3>
+      <p>Receive instant feedback to tailor your resume and increase your interview chances.</p>
     </div>
   </section>
-
-  <section class="how-it-works">
-    <h2>How It Works</h2>
-    <p>Just 3 simple steps to get your resume optimized:</p>
-    <ul style="list-style-type: none;">
-      <li>🔐 Login with Google</li>
-      <li>📄 Upload Resume + Paste JD</li>
-      <li>📊Get Score + Suggestions</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>Free vs Premium</h2>
-    <p><strong>Free:</strong> Score, Keywords, Suggestions</p>
-    <p><strong>Premium (coming soon):</strong> Auto-Improved Resume + Download PDF</p>
-    <button class="btn" disabled>Premium Coming Soon</button>
-  </section>
-
-  <footer class="footer">
-    Built with ❤️ using Streamlit + Groq + LLMs by Abhishek
-  </footer>
 
   <script>
     const firebaseConfig = {
@@ -163,7 +190,7 @@
           // ✅ Get the correct token
           result.user.getIdToken(/* forceRefresh */ true).then(function (idToken) {
             // ✅ Redirect to Streamlit app with valid token
-            console.log("Id token", idToken)
+            console.log ("Id token",idToken)
             window.location.href = "https://resume-ranker-bw68qvf7xhv5mtbzpdrbe2.streamlit.app/?token=" + idToken;
           });
         })
@@ -173,6 +200,8 @@
     }
   </script>
 
+  <footer>
+    Built with ❤️ by Abhishek | Resume Ranker 2025
+  </footer>
 </body>
-
 </html>

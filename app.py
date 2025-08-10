@@ -1,17 +1,19 @@
 import streamlit as st
 from ai_suggester import get_suggestions
+from ai_suggester import rewrite_resume_for_job
 from matcher import calculate_match_score
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth as admin_auth
 import os
-import io
 import tempfile
-
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+import json
+import subprocess
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from io import BytesIO
 
 
 # --------------- CONFIG & THEME ---------------- #
@@ -156,31 +158,27 @@ if st.button("🔍 Analyze Resume"):
                 else:
                     st.info("AI did not return a detailed suggestion.")
 
-                ai_suggestions_raw = get_suggestions(resume_text.strip(), job_desc_input.strip())
-                suggestions = [line.strip() for line in ai_suggestions_raw.split("\n") if line.strip()]
-                
-                for page in pdf_doc:
-                    for word in matched:
-                        matches=page.search_for(word)
-                        for match in matches:
-                            page.add_highlight_annot(match)
-                
-                suggestion_page = pdf_doc.new_page()
-                suggestion_text = "AI Suggestions to Improve Your Resume:\n\n" + "\n".join(f"- {s}" for s in suggestions)
-                suggestion_page.insert_text((50, 50), suggestion_text, fontsize=12, fontname="helv")
-                
-                updated_resume_path = os.path.join(tempfile.gettempdir(), "Updated_Resume.pdf")
-                pdf_doc.save(updated_resume_path)
+      
+                st.markdown("### Updated ATS-Optimized Resume")
+                updated_resume=rewrite_resume_for_job(resume_text.strip(),job_desc_input.strip())
+                st.text_area("Updated Resume Preview",value=updated_resume,height=400)
 
-                # Offer download
-                with open(updated_resume_path, "rb") as f:
-                    st.download_button(
-                        label="📥 Download Updated Resume",
-                        data=f,
-                        file_name="Updated_Resume.pdf",
-                        mime="application/pdf"
-                    )
-            
+
+                doc =Document()
+                for line in updated_resume.split("\n"):
+                    if line.strip():
+                        doc.add_paragraph(line.strip)
+
+                buffer = BytesIO()
+                doc.save(buffer)
+                buffer.seek(0)
+
+                st.download_button(
+                    label="📥 Download Updated Resume (.docx)",
+                    data=buffer,
+                    file_name="updated_resume.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
             except Exception as e:
                 st.error(f"Something went wrong: {e}")
 

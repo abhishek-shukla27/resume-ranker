@@ -167,7 +167,7 @@ if st.button("🔍 Analyze Resume"):
                 doc =Document()
                 for line in updated_resume.split("\n"):
                     if line.strip():
-                        doc.add_paragraph(line.strip)
+                        doc.add_paragraph(line.strip())
 
                 buffer = BytesIO()
                 doc.save(buffer)

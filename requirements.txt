@@ -10,3 +10,4 @@ setuptools
 google-cloud-storage
 reportlab
 python-docx
+pdf2docx

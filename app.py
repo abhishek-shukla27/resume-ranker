@@ -1,27 +1,21 @@
 import streamlit as st
-from ai_suggester import get_suggestions
-from ai_suggester import rewrite_resume_for_job
+from ai_suggester import get_suggestions, rewrite_resume_for_job
 from matcher import calculate_match_score
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth as admin_auth
 from resume_paser import parse_resume_auto
-from jd_analyzer import extract_jd_keywords,format_keyword_prompt
+from jd_analyzer import extract_jd_keywords, format_keyword_prompt
 import os
 import tempfile
-import json
-import subprocess
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from io import BytesIO
-
+from pdf2docx import Converter
+from docx import Document
 
 # --------------- CONFIG & THEME ---------------- #
 st.set_page_config(page_title="Resume Ranker", layout="centered", page_icon="📄")
 
-# Hide Streamlit default menu & footer
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -121,42 +115,39 @@ st.markdown("Upload your resume and paste the job description to get instant ATS
 resume_file = st.file_uploader("📄 Upload Your Resume (PDF)", type=["pdf"])
 job_desc_input = st.text_area("🧾 Paste Job Description", height=200)
 
-
-
 if st.button("🔍 Analyze Resume"):
     if not resume_file or not job_desc_input.strip():
         st.warning("Please upload a resume and enter a job description.")
     else:
         with st.spinner("Processing..."):
             try:
-                
+                # ✅ Read file once & save temp PDF
                 raw_bytes = resume_file.read()
                 resume_file.seek(0)
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                     tmp.write(resume_file.read())
                     uploaded_path = tmp.name
+
                 # Extract text from PDF
                 pdf_doc = fitz.open(uploaded_path)
                 resume_text = "".join([page.get_text() for page in pdf_doc])
 
-
-                
+                # Parse resume metadata
                 parsed = parse_resume_auto(raw_bytes, getattr(resume_file, "name", "resume.pdf"))
-                st.json(parsed)  # Debug output, can remove later
+                st.json(parsed)  # Debug output
 
-                # ✅ STEP 2: Extract JD keywords
+                # ✅ Extract JD keywords
                 jd_kw = extract_jd_keywords(job_desc_input)
                 st.write("Extracted JD keywords:", jd_kw[:30])
                 st.write(format_keyword_prompt(jd_kw))
 
-                # Keyword Match
-                matched, missing, score = calculate_match_score(resume_text, job_desc_input)
-                st.markdown(f"### ✅ Match Score: **{score}%**")
+                # Keyword Match - OLD score
+                matched, missing, old_score = calculate_match_score(resume_text, job_desc_input)
+                st.markdown(f"### 🏁 Original ATS Score: **{old_score}%**")
 
-                # Display Matched & Missing Keywords
+                # Display keywords
                 matched_html = "".join([f"<span class='keyword-chip matched'>{word}</span>" for word in matched])
                 missing_html = "".join([f"<span class='keyword-chip missing'>{word}</span>" for word in missing])
-
                 st.markdown("#### ✅ Matched Keywords", unsafe_allow_html=True)
                 st.markdown(matched_html, unsafe_allow_html=True)
                 st.markdown("#### ❌ Missing Keywords", unsafe_allow_html=True)
@@ -170,20 +161,37 @@ if st.button("🔍 Analyze Resume"):
                 else:
                     st.info("AI did not return a detailed suggestion.")
 
-      
-                st.markdown("### Updated ATS-Optimized Resume")
-                updated_resume=rewrite_resume_for_job(resume_text.strip(),job_desc_input.strip(),missing_keywords=missing)
-                st.text_area("Updated Resume Preview",value=updated_resume,height=400)
+                # ✅ AI Rewrite with Missing Keywords
+                st.markdown("### ✍️ Updated ATS-Optimized Resume")
+                updated_resume = rewrite_resume_for_job(
+                    resume_text.strip(),
+                    job_desc_input.strip(),
+                    missing_keywords=missing
+                )
+                st.text_area("Updated Resume Preview", value=updated_resume, height=400)
 
+                # New ATS score
+                _, _, new_score = calculate_match_score(updated_resume, job_desc_input)
+                st.success(f"📈 ATS Score Improved: {old_score}% → {new_score}%")
 
-                doc =Document()
-                for line in updated_resume.split("\n"):
-                    if line.strip():
-                        doc.add_paragraph(line.strip())
+                # ✅ Preserve formatting: Convert PDF → DOCX → Edit → Save
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as docx_tmp:
+                    converter = Converter(uploaded_path)
+                    converter.convert(docx_tmp.name, start=0, end=None)
+                    converter.close()
 
-                buffer = BytesIO()
-                doc.save(buffer)
-                buffer.seek(0)
+                    doc = Document(docx_tmp.name)
+                    # Replace paragraphs with updated text (simple version)
+                    new_lines = updated_resume.split("\n")
+                    idx = 0
+                    for p in doc.paragraphs:
+                        if idx < len(new_lines) and p.text.strip():
+                            p.text = new_lines[idx]
+                            idx += 1
+
+                    buffer = BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
 
                 st.download_button(
                     label="📥 Download Updated Resume (.docx)",
@@ -191,13 +199,10 @@ if st.button("🔍 Analyze Resume"):
                     file_name="updated_resume.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
+
             except Exception as e:
                 st.error(f"Something went wrong: {e}")
 
-
-
 st.markdown("</div>", unsafe_allow_html=True)
-
-# Footer
 st.markdown("---")
 st.markdown("Built with ❤️ by Abhishek | Powered by Streamlit + LLMs")

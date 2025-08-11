@@ -49,41 +49,61 @@ Give your feedback in the following format:
     except Exception as e:
         return f"❌ AI Suggestion Failed: {str(e)}"
 
-def rewrite_resume_for_job(resume_text,job_desc):
-    """Rewrite the resume to match the job description with 90+ ATS score while keeping the original format."""
-    prompt=f"""
-    You are an expert ATS resume writer.
-    Your goal is to rewrite the provided resume so that:
-    -ATS score is 90+ for the given job description 
-    -Keep the original order,headings, and layout as much as possible
-    -Add missing keywords naturally without keyword stuffing
-    -Improve bullet points for clarity and impact 
-    -Do NOT invent or add false expirence or skills
-    -Keep professional tone and consistent formatting
-    -Return plain text only (no markdown, no extra commentary)
+def rewrite_resume_for_job(resume_text, job_desc, missing_keywords=None, target_score=90, max_rounds=3):
+    if missing_keywords is None:
+        missing_keywords = []
 
-     ---
-    Job Description:
-    {job_desc}
+    current_resume = resume_text
+    last_score = 0
 
-    ---
-    Original Resume:
-    {resume_text}
+    for round_num in range(1, max_rounds + 1):
+        prompt = f"""
+You are an expert ATS resume writer.
+Rewrite the provided resume so that:
+- ATS score ≥ {target_score} for the given job description
+- Keep original order, headings, and layout as much as possible
+- Add these missing keywords naturally without stuffing: {", ".join(missing_keywords)}
+- Improve bullet points for clarity and impact
+- Do NOT invent or add false experience or skills
+- Keep professional tone and consistent formatting
+- Return ONLY the rewritten resume in plain text (no markdown, no extra commentary)
 
-    ---
-    Updated Resume:
-    """
-    headers={"Authorization":f"Bearer {API_KEY}","Content-Type":"application/json"}
-    payload={
-        "model":MODEL_NAME,
-        "messages":[{"role":"user","content":prompt}],
-        "temperature":0.4,
-    }
+---
+Job Description:
+{job_desc}
 
-    try:
-        response = requests.post(BASE_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
-    except Exception as e:
-        return f"❌ Resume Rewrite Failed: {e}"
+---
+Original Resume:
+{current_resume}
+
+---
+Updated Resume:
+"""
+        headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+        payload = {
+            "model": MODEL_NAME,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.0,
+        }
+
+        try:
+            response = requests.post(BASE_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            rewritten_resume = data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            return f"❌ Resume Rewrite Failed: {e}"
+
+        # Score new resume
+        from matcher import calculate_match_score
+        matched, missing, score = calculate_match_score(rewritten_resume, job_desc)
+
+        if score >= target_score:
+            return rewritten_resume  # Done
+
+        # Prepare for next round
+        current_resume = rewritten_resume
+        missing_keywords = missing
+        last_score = score
+
+    return current_resume

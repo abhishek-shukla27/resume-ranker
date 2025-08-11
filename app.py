@@ -134,7 +134,7 @@ if st.button("🔍 Analyze Resume"):
 
                 # Parse resume metadata
                 parsed = parse_resume_auto(raw_bytes, getattr(resume_file, "name", "resume.pdf"))
-                st.json(parsed)  # Debug output
+                #st.json(parsed)  # Debug output
 
                 # ✅ Extract JD keywords
                 jd_kw = extract_jd_keywords(job_desc_input)

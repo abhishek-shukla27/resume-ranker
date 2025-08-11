@@ -131,6 +131,7 @@ if st.button("🔍 Analyze Resume"):
             try:
                 
                 raw_bytes = resume_file.read()
+                resume_file.seek(0)
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                     tmp.write(resume_file.read())
                     uploaded_path = tmp.name
@@ -171,7 +172,7 @@ if st.button("🔍 Analyze Resume"):
 
       
                 st.markdown("### Updated ATS-Optimized Resume")
-                updated_resume=rewrite_resume_for_job(resume_text.strip(),job_desc_input.strip())
+                updated_resume=rewrite_resume_for_job(resume_text.strip(),job_desc_input.strip(),missing_keywords=missing)
                 st.text_area("Updated Resume Preview",value=updated_resume,height=400)
 
 

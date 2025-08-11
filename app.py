@@ -6,6 +6,8 @@ import fitz  # PyMuPDF
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth as admin_auth
+from resume_paser import parse_resume_auto
+from jd_analyzer import extract_jd_keywords,format_keyword_prompt
 import os
 import tempfile
 import json
@@ -127,15 +129,24 @@ if st.button("🔍 Analyze Resume"):
     else:
         with st.spinner("Processing..."):
             try:
-
+                
+                raw_bytes = resume_file.read()
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                     tmp.write(resume_file.read())
                     uploaded_path = tmp.name
                 # Extract text from PDF
                 pdf_doc = fitz.open(uploaded_path)
-                resume_text = ""
-                for page in pdf_doc:
-                    resume_text+=page.get_text()
+                resume_text = "".join([page.get_text() for page in pdf_doc])
+
+
+                
+                parsed = parse_resume_auto(raw_bytes, getattr(resume_file, "name", "resume.pdf"))
+                st.json(parsed)  # Debug output, can remove later
+
+                # ✅ STEP 2: Extract JD keywords
+                jd_kw = extract_jd_keywords(job_desc_input)
+                st.write("Extracted JD keywords:", jd_kw[:30])
+                st.write(format_keyword_prompt(jd_kw))
 
                 # Keyword Match
                 matched, missing, score = calculate_match_score(resume_text, job_desc_input)

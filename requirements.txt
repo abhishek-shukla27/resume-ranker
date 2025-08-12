@@ -11,3 +11,4 @@ google-cloud-storage
 reportlab
 python-docx
 pdf2docx
+language_tool_python

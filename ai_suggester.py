@@ -2,7 +2,7 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 import requests
-
+from matcher import calculate_match_score
 load_dotenv()  # Load .env file (for local dev)
 API_KEY=os.getenv("GROQ_API_KEY")
 MODEL_NAME="llama3-8b-8192"
@@ -49,61 +49,41 @@ Give your feedback in the following format:
     except Exception as e:
         return f"❌ AI Suggestion Failed: {str(e)}"
 
-def rewrite_resume_for_job(resume_text, job_desc, missing_keywords=None, target_score=90, max_rounds=3):
-    if missing_keywords is None:
-        missing_keywords = []
-
+def rewrite_resume_for_role(resume_text, job_desc, missing_keywords, target_score=90, max_rounds=3):
     current_resume = resume_text
-    last_score = 0
-
-    for round_num in range(1, max_rounds + 1):
+    for round_num in range(1, max_rounds+1):
         prompt = f"""
 You are an expert ATS resume writer.
-Rewrite the provided resume so that:
-- ATS score ≥ {target_score} for the given job description
-- Keep original order, headings, and layout as much as possible
-- Add these missing keywords naturally without stuffing: {", ".join(missing_keywords)}
-- Improve bullet points for clarity and impact
-- Do NOT invent or add false experience or skills
-- Keep professional tone and consistent formatting
-- Return ONLY the rewritten resume in plain text (no markdown, no extra commentary)
-
+Transform the following resume for the given job description.
 ---
 Job Description:
 {job_desc}
-
+---
+Guidelines:
+- Remove irrelevant skills/experience.
+- Add missing keywords naturally: {', '.join(missing_keywords)}.
+- Keep truthful (no fake experience).
+- Maintain sections: Summary, Skills, Experience, Education, Projects.
+- Target ATS score: {target_score}+.
+- Preserve professional tone and formatting.
 ---
 Original Resume:
 {current_resume}
-
 ---
-Updated Resume:
+Rewritten Resume:
 """
         headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
         payload = {
             "model": MODEL_NAME,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.0,
+            "temperature": 0.0
         }
+        resp = requests.post(BASE_URL, headers=headers, json=payload).json()
+        rewritten_resume = resp["choices"][0]["message"]["content"].strip()
 
-        try:
-            response = requests.post(BASE_URL, headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
-            rewritten_resume = data["choices"][0]["message"]["content"].strip()
-        except Exception as e:
-            return f"❌ Resume Rewrite Failed: {e}"
-
-        # Score new resume
-        from matcher import calculate_match_score
-        matched, missing, score = calculate_match_score(rewritten_resume, job_desc)
-
+        _, missing_after, score = calculate_match_score(rewritten_resume, job_desc)
         if score >= target_score:
-            return rewritten_resume  # Done
-
-        # Prepare for next round
+            return rewritten_resume
         current_resume = rewritten_resume
-        missing_keywords = missing
-        last_score = score
-
+        missing_keywords = missing_after
     return current_resume

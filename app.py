@@ -1,5 +1,6 @@
 import streamlit as st
-from ai_suggester import get_suggestions, rewrite_resume_for_job
+from ai_suggester import get_suggestions  # Keep suggestions from old logic
+from ai_suggester import rewrite_resume_for_role  # New role-specific rewriting
 from matcher import calculate_match_score
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
@@ -12,6 +13,9 @@ import tempfile
 from io import BytesIO
 from pdf2docx import Converter
 from docx import Document
+from cleaner import extract_text_from_pdf, clean_resume_text
+from gap_analysis import analyze_role_gap
+from formatter import generate_docx_from_text
 
 # --------------- CONFIG & THEME ---------------- #
 st.set_page_config(page_title="Resume Ranker", layout="centered", page_icon="📄")
@@ -25,8 +29,8 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Custom CSS
-st.markdown("""
+# Custom CSS (unchanged)
+st.markdown(""" 
     <style>
     body {
         background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
@@ -115,37 +119,29 @@ st.markdown("Upload your resume and paste the job description to get instant ATS
 resume_file = st.file_uploader("📄 Upload Your Resume (PDF)", type=["pdf"])
 job_desc_input = st.text_area("🧾 Paste Job Description", height=200)
 
+# Step 1 – AI Suggestions
 if st.button("🔍 Analyze Resume"):
     if not resume_file or not job_desc_input.strip():
         st.warning("Please upload a resume and enter a job description.")
     else:
         with st.spinner("Processing..."):
             try:
-                # ✅ Read file once & save temp PDF
                 raw_bytes = resume_file.read()
-                resume_file.seek(0)
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                    tmp.write(resume_file.read())
+                    tmp.write(raw_bytes)
                     uploaded_path = tmp.name
 
-                # Extract text from PDF
                 pdf_doc = fitz.open(uploaded_path)
                 resume_text = "".join([page.get_text() for page in pdf_doc])
 
-                # Parse resume metadata
                 parsed = parse_resume_auto(raw_bytes, getattr(resume_file, "name", "resume.pdf"))
-                #st.json(parsed)  # Debug output
 
-                # ✅ Extract JD keywords
                 jd_kw = extract_jd_keywords(job_desc_input)
-                st.write("Extracted JD keywords:", jd_kw[:30])
                 st.write(format_keyword_prompt(jd_kw))
 
-                # Keyword Match - OLD score
                 matched, missing, old_score = calculate_match_score(resume_text, job_desc_input)
                 st.markdown(f"### 🏁 Original ATS Score: **{old_score}%**")
 
-                # Display keywords
                 matched_html = "".join([f"<span class='keyword-chip matched'>{word}</span>" for word in matched])
                 missing_html = "".join([f"<span class='keyword-chip missing'>{word}</span>" for word in missing])
                 st.markdown("#### ✅ Matched Keywords", unsafe_allow_html=True)
@@ -153,7 +149,6 @@ if st.button("🔍 Analyze Resume"):
                 st.markdown("#### ❌ Missing Keywords", unsafe_allow_html=True)
                 st.markdown(missing_html, unsafe_allow_html=True)
 
-                # AI Suggestions
                 st.markdown("### 🤖 AI Suggestions to Improve Your Resume")
                 ai_result = get_suggestions(resume_text.strip(), job_desc_input.strip())
                 if ai_result:
@@ -161,47 +156,36 @@ if st.button("🔍 Analyze Resume"):
                 else:
                     st.info("AI did not return a detailed suggestion.")
 
-                # ✅ AI Rewrite with Missing Keywords
-                st.markdown("### ✍️ Updated ATS-Optimized Resume")
-                updated_resume = rewrite_resume_for_job(
-                    resume_text.strip(),
-                    job_desc_input.strip(),
-                    missing_keywords=missing
-                )
-                st.text_area("Updated Resume Preview", value=updated_resume, height=400)
-
-                # New ATS score
-                _, _, new_score = calculate_match_score(updated_resume, job_desc_input)
-                st.success(f"📈 ATS Score Improved: {old_score}% → {new_score}%")
-
-                # ✅ Preserve formatting: Convert PDF → DOCX → Edit → Save
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as docx_tmp:
-                    converter = Converter(uploaded_path)
-                    converter.convert(docx_tmp.name, start=0, end=None)
-                    converter.close()
-
-                    doc = Document(docx_tmp.name)
-                    # Replace paragraphs with updated text (simple version)
-                    new_lines = updated_resume.split("\n")
-                    idx = 0
-                    for p in doc.paragraphs:
-                        if idx < len(new_lines) and p.text.strip():
-                            p.text = new_lines[idx]
-                            idx += 1
-
-                    buffer = BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-
-                st.download_button(
-                    label="📥 Download Updated Resume (.docx)",
-                    data=buffer,
-                    file_name="updated_resume.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
+                # Save in session for transformation
+                st.session_state.resume_text = resume_text
+                st.session_state.job_desc = job_desc_input
+                st.session_state.missing_kw = missing
+                st.session_state.old_score = old_score
 
             except Exception as e:
                 st.error(f"Something went wrong: {e}")
+
+# Step 2 – Transformation
+if "resume_text" in st.session_state and st.session_state.resume_text:
+    st.markdown("### 🚀 Ready to Transform Your Resume?")
+    if st.button("Yes, Transform My Resume"):
+        updated_resume = rewrite_resume_for_role(
+            st.session_state.resume_text,
+            st.session_state.job_desc,
+            st.session_state.missing_kw
+        )
+
+        _, _, new_score = calculate_match_score(updated_resume, st.session_state.job_desc)
+        st.success(f"📈 ATS Score Improved: {st.session_state.old_score}% → {new_score}%")
+        st.text_area("Updated Resume Preview", value=updated_resume, height=400)
+
+        buffer = generate_docx_from_text(updated_resume)
+        st.download_button(
+            label="📥 Download Updated Resume (.docx)",
+            data=buffer,
+            file_name="updated_resume.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
 
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("---")

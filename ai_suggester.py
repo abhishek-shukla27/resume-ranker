@@ -143,13 +143,10 @@ You will transform the resume for the given job description and return STRICT JS
 Do NOT include any text outside JSON. Do NOT use markdown or backticks.
 
 RULES:
--Keep the professional summary in jus two lines describing the recent education and highlighting only the intrested job role.
--STRICTLY keep ALL sections from the baseline JSON
--DO NOT remove "experience","projects","education","certification",even if they are empty.
-- If a section has no new data, keep the old data exactly as is.
--Preserve original wording unless changes improve ATS score.
-- Improve ATS alignment truthfully, no fake details.
-
+-Keep truthful,no fake experience.
+-Do not remove candidate's real project or education,only reformat.
+-Project must always have exactly 3 bullet points:Objective, Tech Stack,Features
+-Professional Summary must be exactly 2 lines including recent degree or eduaction and highlighting skills relevant to the uploaded JD. 
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
 -Return JSON ONLY.No markdown, no text outside JSON.

@@ -77,7 +77,7 @@ def add_heading(doc, text):
     run.font.size = Pt(12)
     run.bold = True
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    run.font.color.rgb = RGBColor(0, 51, 102)  # Dark blue
+    run.font.color.rgb = RGBColor(0, 0, 0)  # Dark blue
 
 
 def add_experience_block(doc, exp):

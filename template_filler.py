@@ -3,7 +3,8 @@ from docx import Document
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from io import BytesIO
-
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 def build_template_resume(data):
     """
@@ -109,7 +110,22 @@ def add_project_block(doc, proj):
     
     add_section_divider(doc)
     
+
 def add_section_divider(doc):
-    p=doc.add_paragraph()
-    run=p.add_run("-"*40)
-    run.bold=True
+    """
+    Inserts a straight horizontal line in the DOCX document.
+    """
+    p = doc.add_paragraph()
+    
+    # Create a border element
+    p_border = OxmlElement('w:pBdr')
+    bottom = OxmlElement('w:bottom')
+    bottom.set(qn('w:val'), 'single')     # type of line: single
+    bottom.set(qn('w:sz'), '6')           # thickness
+    bottom.set(qn('w:space'), '1')        # space above line
+    bottom.set(qn('w:color'), '000000')   # color (black)
+    
+    p_border.append(bottom)
+    p._p.get_or_add_pPr().append(p_border)
+    
+    return p

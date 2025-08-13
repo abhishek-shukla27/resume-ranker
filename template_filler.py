@@ -130,7 +130,7 @@ def add_skills_section(doc, skills_dict):
     if not skills_dict:
         return
     
-    add_heading(doc, "Key Skills")
+    #dd_heading(doc, "Key Skills")
     
     for category, items in skills_dict.items():
         if not items:

@@ -146,7 +146,7 @@ RULES:
 -Keep truthful,no fake experience.
 -Do not remove candidate's real project or education,only reformat.
 -Project must always have exactly 3 bullet points:Objective, Tech Stack,Features
--Professional Summary must be exactly 2 lines including recent degree or eduaction and highlighting skills relevant to the uploaded JD. 
+-Summary must be exactly 2 lines. 
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
 -Return JSON ONLY.No markdown, no text outside JSON.
@@ -165,7 +165,7 @@ OUTPUT SCHEMA:
 {{
   "name": "string",
   "contact": "string",
-  "summary": "string",
+  "summary": "string(2 lines only:1st line=Degree + University,2nd line=skill relevant to JD in short)",
   "skills": ["string"],
   "experience": [
     {{

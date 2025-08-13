@@ -102,10 +102,12 @@ def add_project_block(doc, proj):
     run = p.add_run(title_line)
     run.font.size = Pt(11)
     run.bold = True
-    add_section_divider(doc)
+
     for detail in proj.get("details", []):
         bullet = doc.add_paragraph(style="List Bullet")
         bullet.add_run(detail)
+    
+    add_section_divider(doc)
     
 def add_section_divider(doc):
     p=doc.add_paragraph()

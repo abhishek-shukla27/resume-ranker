@@ -142,10 +142,16 @@ def _json_schema_prompt(missing_kw: List[str], target_score: int, job_desc: str,
 You will transform the resume for the given job description and return STRICT JSON ONLY.
 Do NOT include any text outside JSON. Do NOT use markdown or backticks.
 
-OBJECTIVE:
-- Improve ATS alignment while staying truthful.
+RULES:
+-STRICTLY keep ALL sections from the baseline JSON
+-DO NOT remove "experience","projects","education","certification",even if they are empty.
+- If a section has no new data, keep the old data exactly as is.
+-Preserve original wording unless changes improve ATS score.
+- Improve ATS alignment truthfully, no fake details.
+
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
+-Return JSON ONLY.No markdown, no text outside JSON
 
 INPUTS:
 Job Description:

@@ -106,3 +106,8 @@ def add_project_block(doc, proj):
     for detail in proj.get("details", []):
         bullet = doc.add_paragraph(style="List Bullet")
         bullet.add_run(detail)
+    
+def add_section_divider(doc):
+    p=doc.add_paragraph()
+    run=p.add_run("-"*40)
+    run.bold=True

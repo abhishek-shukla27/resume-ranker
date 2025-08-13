@@ -2,7 +2,10 @@ import os
 import requests
 from dotenv import load_dotenv
 from matcher import calculate_match_score
-
+import json
+import requests
+from copy import deepcopy
+from typing import Any,Dict,List
 load_dotenv()
 
 API_KEY = os.getenv("GROQ_API_KEY")
@@ -59,123 +62,280 @@ Give your feedback in the following format:
         return f"❌ AI Suggestion Failed: {str(e)}"
 
 # ------------------- Resume Optimization ------------------- #
-def optimize_resume_for_role(parsed_resume, job_desc, target_score=90, max_rounds=3):
+def optimize_resume_for_role(parsed_resume: Dict[str, Any], job_desc: str, target_score: int = 90, max_rounds: int = 2) -> Dict[str, Any]:
     """
-    Take parsed_resume dict and optimize for the given job description.
-    Returns updated dict ready for template filling.
+    Takes a parsed_resume dict (from your parser) and returns an optimized dict
+    ready to feed into template_filler.build_template_resume(data).
     """
-    current_resume_text = build_resume_text(parsed_resume)
+    if not API_KEY:
+        return _coerce_resume_dict(parsed_resume)
 
-    # Initial missing keywords check
-    _, missing_keywords, score = calculate_match_score(current_resume_text, job_desc)
+    current_text = _dict_to_plain_text(parsed_resume)
+    _, missing_kw, score = calculate_match_score(current_text, job_desc)
 
-    for round_num in range(1, max_rounds + 1):
-        prompt = f"""
-You are an expert ATS resume writer.
-Transform the following resume for the given job description.
+    working = deepcopy(parsed_resume)
 
-Job Description:
-{job_desc}
-
-Guidelines:
-- Remove irrelevant skills/experience.
-- Add missing keywords naturally: {', '.join(missing_keywords)}.
-- Keep truthful (no fake experience).
-- Maintain sections: Summary, Skills, Experience, Education, Projects.
-- Target ATS score: {target_score}+.
-- Preserve professional tone and formatting.
-
-Original Resume:
-{current_resume_text}
-"""
+    for _ in range(max_rounds):
+        json_schema = _json_schema_prompt(missing_kw, target_score, job_desc, working, current_text)
 
         payload = {
             "model": MODEL_NAME,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.0
+            "messages": [
+                {"role": "system",
+                 "content": (
+                     "You are an expert ATS resume writer. "
+                     "Return ONLY valid JSON that matches the requested schema. "
+                     "No Markdown, no backticks, no commentary."
+                 )},
+                {"role": "user", "content": json_schema}
+            ],
+            "temperature": 0.1,
+            "response_format": {"type": "json_object"}
         }
 
-        resp = requests.post(BASE_URL, headers={
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        }, json=payload).json()
+        try:
+            resp = _post_json(payload)
+            if "error" in resp:
+                break
+            if "choices" not in resp or not resp["choices"]:
+                break
 
-        if "error" in resp:
-            print(f"API Error: {resp['error'].get('message', 'Unknown error')}")
+            raw = resp["choices"][0]["message"]["content"]
+            json_text = _extract_json(raw)
+            model_out = _safe_json_loads(json_text)
+
+            if not isinstance(model_out, dict):
+                break
+
+            optimized = _normalize_model_output(model_out, fallback=working)
+
+            new_text = _dict_to_plain_text(optimized)
+            _, missing_kw, score = calculate_match_score(new_text, job_desc)
+            working = optimized
+            current_text = new_text
+
+            if score >= target_score:
+                break
+
+        except Exception:
             break
 
-        if "choices" not in resp or not resp["choices"]:
-            print("No AI response received.")
-            break
+    return _coerce_resume_dict(working)
 
-        rewritten_resume = resp["choices"][0]["message"]["content"].strip()
-        _, missing_after, score = calculate_match_score(rewritten_resume, job_desc)
 
-        current_resume_text = rewritten_resume
-        missing_keywords = missing_after
+# ===================== Helpers ===================== #
 
-        if score >= target_score:
-            break
+def _post_json(payload: Dict[str, Any]) -> Dict[str, Any]:
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    r = requests.post(BASE_URL, headers=headers, json=payload, timeout=60)
+    try:
+        return r.json()
+    except Exception:
+        return {"error": {"message": f"Non-JSON response (status {r.status_code})"}}
 
-    # Convert rewritten resume back into structured dict
-    optimized_data = parse_rewritten_resume(rewritten_resume, parsed_resume)
-    return optimized_data
 
-# ------------------- Helper Functions ------------------- #
-def build_resume_text(data):
-    """Convert structured resume dict into plain text for AI."""
-    text = f"{data.get('name', '')}\n{data.get('contact', '')}\n\n"
-    text += f"Summary:\n{data.get('summary', '')}\n\n"
-    text += "Skills:\n" + ", ".join(data.get('skills', [])) + "\n\n"
+def _json_schema_prompt(missing_kw: List[str], target_score: int, job_desc: str, working_dict: Dict[str, Any], current_text: str) -> str:
+    missing_str = ", ".join(missing_kw) if missing_kw else "none"
+    baseline_json = json.dumps(_coerce_resume_dict(working_dict), ensure_ascii=False)
+
+    return f"""
+You will transform the resume for the given job description and return STRICT JSON ONLY.
+Do NOT include any text outside JSON. Do NOT use markdown or backticks.
+
+OBJECTIVE:
+- Improve ATS alignment while staying truthful.
+- Insert missing keywords naturally: {missing_str}
+- Target ATS score: {target_score}+.
+
+INPUTS:
+Job Description:
+{job_desc}
+
+Current Resume (structured):
+{baseline_json}
+
+Current Resume (plain text):
+{current_text}
+
+OUTPUT SCHEMA:
+{{
+  "name": "string",
+  "contact": "string",
+  "summary": "string",
+  "skills": ["string"],
+  "experience": [
+    {{
+      "role": "string",
+      "company": "string",
+      "duration": "string",
+      "details": ["string"]
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "string",
+      "tech": "string",
+      "details": ["string"]
+    }}
+  ],
+  "education": "string or list",
+  "certifications": ["string"]
+}}
+
+RULES:
+- Keep truthful, no fake experience.
+- Remove irrelevant content.
+- If fresher, keep "experience" empty.
+- Return ONLY the JSON.
+""".strip()
+
+
+def _extract_json(s: str) -> str:
+    first = s.find("{")
+    last = s.rfind("}")
+    if first != -1 and last != -1 and last > first:
+        return s[first:last+1]
+    return s
+
+
+def _safe_json_loads(s: str):
+    try:
+        return json.loads(s)
+    except Exception:
+        return None
+
+
+def _ensure_list(x) -> List[Any]:
+    if x is None:
+        return []
+    if isinstance(x, list):
+        return x
+    return [x]
+
+
+def _coerce_string(val: Any, default: str = "") -> str:
+    return str(val).strip() if val is not None else default
+
+
+def _normalize_model_output(model_out: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+
+    out["name"] = _coerce_string(model_out.get("name"), fallback.get("name", ""))
+    out["contact"] = _coerce_string(model_out.get("contact"), fallback.get("contact", ""))
+    out["summary"] = _coerce_string(model_out.get("summary"), fallback.get("summary", ""))
+
+    skills = model_out.get("skills")
+    if isinstance(skills, str):
+        skills = [s.strip() for s in skills.split(",") if s.strip()]
+    out["skills"] = _ensure_list(skills) or _ensure_list(fallback.get("skills", []))
+
+    out["experience"] = []
+    for item in _ensure_list(model_out.get("experience")):
+        if isinstance(item, str):
+            out["experience"].append({"role": item, "company": "", "duration": "", "details": []})
+        elif isinstance(item, dict):
+            out["experience"].append({
+                "role": _coerce_string(item.get("role"), ""),
+                "company": _coerce_string(item.get("company"), ""),
+                "duration": _coerce_string(item.get("duration"), ""),
+                "details": _ensure_list(item.get("details"))
+            })
+
+    out["projects"] = []
+    for item in _ensure_list(model_out.get("projects")):
+        if isinstance(item, str):
+            out["projects"].append({"name": item, "tech": "", "details": []})
+        elif isinstance(item, dict):
+            out["projects"].append({
+                "name": _coerce_string(item.get("name"), ""),
+                "tech": _coerce_string(item.get("tech"), ""),
+                "details": _ensure_list(item.get("details"))
+            })
+
+    out["education"] = model_out.get("education", fallback.get("education", ""))
+    certs = model_out.get("certifications")
+    if isinstance(certs, str):
+        certs = [c.strip() for c in certs.split(",") if c.strip()]
+    out["certifications"] = _ensure_list(certs)
+
+    return out
+
+
+def _coerce_resume_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+    coerced = {
+        "name": _coerce_string(d.get("name"), ""),
+        "contact": _coerce_string(d.get("contact"), ""),
+        "summary": _coerce_string(d.get("summary"), ""),
+        "skills": _ensure_list(d.get("skills")),
+        "experience": [],
+        "projects": [],
+        "education": d.get("education", ""),
+        "certifications": _ensure_list(d.get("certifications"))
+    }
+
+    for item in _ensure_list(d.get("experience")):
+        if isinstance(item, dict):
+            coerced["experience"].append({
+                "role": _coerce_string(item.get("role"), ""),
+                "company": _coerce_string(item.get("company"), ""),
+                "duration": _coerce_string(item.get("duration"), ""),
+                "details": _ensure_list(item.get("details"))
+            })
+        elif isinstance(item, str):
+            coerced["experience"].append({"role": item, "company": "", "duration": "", "details": []})
+
+    for item in _ensure_list(d.get("projects")):
+        if isinstance(item, dict):
+            coerced["projects"].append({
+                "name": _coerce_string(item.get("name"), ""),
+                "tech": _coerce_string(item.get("tech"), ""),
+                "details": _ensure_list(item.get("details"))
+            })
+        elif isinstance(item, str):
+            coerced["projects"].append({"name": item, "tech": "", "details": []})
+
+    return coerced
+
+
+def _dict_to_plain_text(data: Dict[str, Any]) -> str:
+    parts = [
+        str(data.get("name", "")),
+        str(data.get("contact", "")),
+    ]
+
+    if data.get("summary"):
+        parts.append("\nSummary:")
+        parts.append(str(data["summary"]))
+
+    if data.get("skills"):
+        parts.append("\nSkills:")
+        parts.append(", ".join([str(s) for s in data["skills"]]))
 
     if data.get("experience"):
-        text += "Experience:\n"
+        parts.append("\nExperience:")
         for exp in data["experience"]:
-            text += f"- {exp}\n"
+            line = f"{exp.get('role','')} @ {exp.get('company','')} ({exp.get('duration','')})"
+            parts.append(line)
+            for b in _ensure_list(exp.get("details")):
+                parts.append(f"- {b}")
 
     if data.get("projects"):
-        text += "\nProjects:\n"
-        for proj in data["projects"]:
-            text += f"- {proj}\n"
+        parts.append("\nProjects:")
+        for pr in data["projects"]:
+            line = f"{pr.get('name','')} — {pr.get('tech','')}"
+            parts.append(line)
+            for b in _ensure_list(pr.get("details")):
+                parts.append(f"- {b}")
 
-    text += f"\nEducation:\n{data.get('education', '')}\n"
+    if data.get("education"):
+        parts.append("\nEducation:")
+        if isinstance(data["education"], list):
+            parts.extend([str(e) for e in data["education"]])
+        else:
+            parts.append(str(data["education"]))
+
     if data.get("certifications"):
-        text += "\nCertifications:\n" + ", ".join(data["certifications"]) + "\n"
+        parts.append("\nCertifications:")
+        parts.append(", ".join([str(c) for c in _ensure_list(data["certifications"])]))
 
-    return text
-
-def parse_rewritten_resume(text, original_data):
-    """
-    Convert AI rewritten plain text back into dict for template_filler.
-    If AI fails to structure data, fallback to original sections.
-    """
-    optimized = original_data.copy()
-
-    # Simple skill extraction (line starting with Skills)
-    for line in text.splitlines():
-        if "skill" in line.lower():
-            skills_part = line.split(":")[-1]
-            optimized["skills"] = [s.strip() for s in skills_part.split(",") if s.strip()]
-
-    # Summary extraction
-    if "summary" in text.lower():
-        summary_idx = text.lower().index("summary")
-        optimized["summary"] = text[summary_idx:].split("\n", 1)[-1].strip()
-
-    # Experience extraction (skip if fresher)
-    if original_data.get("experience"):
-        exp_lines = []
-        if "experience" in text.lower():
-            exp_idx = text.lower().index("experience")
-            exp_lines = text[exp_idx:].split("\n")
-            exp_lines = [l.strip("- ").strip() for l in exp_lines if l.strip()]
-        optimized["experience"] = exp_lines
-
-    # Projects extraction
-    if "projects" in text.lower():
-        proj_idx = text.lower().index("projects")
-        proj_lines = text[proj_idx:].split("\n")
-        proj_lines = [l.strip("- ").strip() for l in proj_lines if l.strip()]
-        optimized["projects"] = proj_lines
-
-    return optimized
+    return "\n".join([p for p in parts if str(p).strip()])

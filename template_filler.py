@@ -1,138 +1,108 @@
+# template_filler.py
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-import io
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from io import BytesIO
+
 
 def build_template_resume(data):
+    """
+    Builds a DOCX resume from structured resume data.
+    Returns BytesIO for download.
+    """
     doc = Document()
 
-    # Set page margins (0.75 inch all sides)
-    sections = doc.sections
-    for section in sections:
-        section.top_margin = Inches(0.75)
-        section.bottom_margin = Inches(0.75)
-        section.left_margin = Inches(0.75)
-        section.right_margin = Inches(0.75)
+    # ===== Name & Contact =====
+    name = doc.add_paragraph()
+    run = name.add_run(data.get("name", ""))
+    run.font.size = Pt(20)
+    run.bold = True
+    name.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # ===== NAME =====
-    add_name_section(doc, data.get("name", ""), data.get("contact", ""))
+    contact = doc.add_paragraph(data.get("contact", ""))
+    contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    contact.runs[0].font.size = Pt(10)
+    contact.runs[0].font.color.rgb = RGBColor(100, 100, 100)
 
-    # ===== SUMMARY =====
+    doc.add_paragraph("")
+
+    # ===== Summary =====
     if data.get("summary"):
-        add_section(doc, "PROFESSIONAL SUMMARY", data["summary"])
+        add_heading(doc, "Professional Summary")
+        doc.add_paragraph(data["summary"])
 
-    # ===== SKILLS =====
+    # ===== Skills =====
     if data.get("skills"):
-        add_section(doc, "SKILLS", format_skills(data["skills"]))
+        add_heading(doc, "Key Skills")
+        doc.add_paragraph(", ".join(data["skills"]))
 
-    # ===== EXPERIENCE =====
+    # ===== Experience =====
     if data.get("experience"):
-        add_experience_section(doc, data["experience"])
+        add_heading(doc, "Professional Experience")
+        for exp in data["experience"]:
+            add_experience_block(doc, exp)
 
-    # ===== PROJECTS =====
+    # ===== Projects =====
     if data.get("projects"):
-        add_projects_section(doc, data["projects"])
+        add_heading(doc, "Projects")
+        for proj in data["projects"]:
+            add_project_block(doc, proj)
 
-    # ===== EDUCATION =====
+    # ===== Education =====
     if data.get("education"):
-        add_section(doc, "EDUCATION", data["education"])
+        add_heading(doc, "Education")
+        if isinstance(data["education"], list):
+            for edu in data["education"]:
+                doc.add_paragraph(str(edu))
+        else:
+            doc.add_paragraph(str(data["education"]))
 
-    # ===== CERTIFICATIONS =====
+    # ===== Certifications =====
     if data.get("certifications"):
-        add_section(doc, "CERTIFICATIONS", data["certifications"])
+        add_heading(doc, "Certifications")
+        doc.add_paragraph(", ".join(data["certifications"]))
 
-    # Save in memory
-    buffer = io.BytesIO()
+    # Save to buffer
+    buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer
 
 
-# ---------------- Helper Functions ---------------- #
+# ===================== HELPERS ===================== #
 
-def add_name_section(doc, name, contact):
-    # Name - 16pt Bold, Center
-    p = doc.add_paragraph(name)
-    run = p.runs[0]
+def add_heading(doc, text):
+    p = doc.add_paragraph()
+    run = p.add_run(text.upper())
+    run.font.size = Pt(12)
     run.bold = True
-    run.font.size = Pt(16)
-    run.font.name = "Calibri"
-    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-
-    # Contact Info - 10pt Center
-    if contact:
-        p = doc.add_paragraph(contact)
-        run = p.runs[0]
-        run.font.size = Pt(10)
-        run.font.name = "Calibri"
-        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run.font.color.rgb = RGBColor(0, 51, 102)  # Dark blue
 
 
-def add_section(doc, title, content):
-    # Heading - 11pt Bold, Caps
-    p = doc.add_paragraph(title.upper())
-    run = p.runs[0]
-    run.bold = True
+def add_experience_block(doc, exp):
+    role_line = f"{exp.get('role', '')} – {exp.get('company', '')}"
+    if exp.get("duration"):
+        role_line += f" ({exp['duration']})"
+    p = doc.add_paragraph()
+    run = p.add_run(role_line)
     run.font.size = Pt(11)
-    run.font.name = "Calibri"
-    run.font.color.rgb = RGBColor(0, 0, 0)
-
-    # Content - 10pt Body
-    if isinstance(content, list):
-        for item in content:
-            para = doc.add_paragraph("• " + item)
-            para.style.font.name = "Calibri"
-            para.style.font.size = Pt(10)
-    else:
-        para = doc.add_paragraph(content)
-        para.style.font.name = "Calibri"
-        para.style.font.size = Pt(10)
-
-
-def add_experience_section(doc, experiences):
-    # Heading
-    p = doc.add_paragraph("EXPERIENCE")
-    run = p.runs[0]
     run.bold = True
+
+    for detail in exp.get("details", []):
+        bullet = doc.add_paragraph(style="List Bullet")
+        bullet.add_run(detail)
+
+
+def add_project_block(doc, proj):
+    title_line = f"{proj.get('name', '')}"
+    if proj.get("tech"):
+        title_line += f" – {proj['tech']}"
+    p = doc.add_paragraph()
+    run = p.add_run(title_line)
     run.font.size = Pt(11)
-    run.font.name = "Calibri"
+    run.bold = True
 
-    for exp in experiences:
-        # Role & Company line
-        role_line = f"{exp.get('role', '')} – {exp.get('company', '')} ({exp.get('dates', '')})"
-        p = doc.add_paragraph(role_line)
-        p.runs[0].bold = True
-        p.runs[0].font.size = Pt(10)
-        p.runs[0].font.name = "Calibri"
-
-        # Bullets
-        for bullet in exp.get("details", []):
-            para = doc.add_paragraph("• " + bullet)
-            para.style.font.name = "Calibri"
-            para.style.font.size = Pt(10)
-
-
-def add_projects_section(doc, projects):
-    if not projects:
-        return
-
-    for proj in projects:
-        if isinstance(proj, str):
-            # Convert string to dict with only 'name'
-            proj = {"name": proj, "tech": "", "description": ""}
-        elif not isinstance(proj, dict):
-            continue  # skip unknown formats
-
-        title_line = f"{proj.get('name', '')} – {proj.get('tech', '')}"
-        doc.add_paragraph(title_line, style="Heading 3")
-
-        desc = proj.get("description", "")
-        if desc:
-            doc.add_paragraph(desc)
-
-
-def format_skills(skills):
-    """Join skills with separator for inline look"""
-    if isinstance(skills, list):
-        return " | ".join(skills)
-    return skills
+    for detail in proj.get("details", []):
+        bullet = doc.add_paragraph(style="List Bullet")
+        bullet.add_run(detail)

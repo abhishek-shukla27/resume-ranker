@@ -34,9 +34,11 @@ def build_template_resume(data):
 
     # ===== Skills =====
     if data.get("skills"):
-        add_heading(doc, "Key Skills")
-        for skill in data["skills"]:
-            add_skills_section(doc,skill)
+        skills_dict=data["skills"]
+        if isinstance(skills_dict,list):
+            skills_dict={"Skills":skills_dict}
+        
+        add_skills_section(doc,skills_dict)
 
     # ===== Experience =====
     if data.get("experience"):
@@ -122,21 +124,13 @@ def filter_relevant_skills(resume_skills, jd_skills):
 
 
 def add_skills_section(doc, skills_dict):
-    """
-    skills_dict: dynamically built dictionary like
-    {
-        "Programming Languages": ["Javascript", "Typescript"],
-        "Frontend Stack": ["HTML5/CSS3", "ReactJS"],
-        ...
-    }
-    Only include categories with skills present.
-    """
+   
     from docx.shared import Pt
     
     if not skills_dict:
         return
     
-    add_heading(doc, "Key Skills")
+    #add_heading(doc, "Key Skills")
     
     for category, items in skills_dict.items():
         if not items:

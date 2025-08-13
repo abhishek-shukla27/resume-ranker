@@ -1,6 +1,6 @@
 import streamlit as st
 from ai_suggester import get_suggestions  # Keep suggestions from old logic
-from ai_suggester import rewrite_resume_for_role  # New role-specific rewriting
+from ai_suggester import optimize_resume_for_role  # New role-specific rewriting
 from matcher import calculate_match_score
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
@@ -121,92 +121,53 @@ st.markdown("Upload your resume and paste the job description to get instant ATS
 resume_file = st.file_uploader("📄 Upload Your Resume (PDF)", type=["pdf"])
 job_desc_input = st.text_area("🧾 Paste Job Description", height=200)
 
-# Step 1 – AI Suggestions
-if st.button("🔍 Analyze Resume"):
-    if not resume_file or not job_desc_input.strip():
-        st.warning("Please upload a resume and enter a job description.")
-    else:
-        with st.spinner("Processing..."):
-            try:
-                raw_bytes = resume_file.read()
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                    tmp.write(raw_bytes)
-                    uploaded_path = tmp.name
+if resume_file and job_desc_input.strip():
+    # Read raw PDF bytes
+    raw_bytes = resume_file.read()
 
-                pdf_doc = fitz.open(uploaded_path)
-                resume_text = "".join([page.get_text() for page in pdf_doc])
+    # Extract raw text from PDF
+    resume_text = extract_text_from_pdf(raw_bytes)
 
-                parsed = parse_resume_auto(raw_bytes, getattr(resume_file, "name", "resume.pdf"))
+    # Parse into structured dict
+    parsed_resume = parse_resume_auto(raw_bytes, getattr(resume_file, "name", "resume.pdf"))
 
-                jd_kw = extract_jd_keywords(job_desc_input)
-                st.write(format_keyword_prompt(jd_kw))
+    # Save in session for later steps
+    st.session_state.resume_text = resume_text
+    st.session_state.parsed_resume = parsed_resume
+    st.session_state.job_desc = job_desc_input
 
-                matched, missing, old_score = calculate_match_score(resume_text, job_desc_input)
-                st.markdown(f"### 🏁 Original ATS Score: **{old_score}%**")
+    st.success("✅ Resume and Job Description uploaded successfully!")
 
-                matched_html = "".join([f"<span class='keyword-chip matched'>{word}</span>" for word in matched])
-                missing_html = "".join([f"<span class='keyword-chip missing'>{word}</span>" for word in missing])
-                st.markdown("#### ✅ Matched Keywords", unsafe_allow_html=True)
-                st.markdown(matched_html, unsafe_allow_html=True)
-                st.markdown("#### ❌ Missing Keywords", unsafe_allow_html=True)
-                st.markdown(missing_html, unsafe_allow_html=True)
+# -------------------- AI SUGGESTIONS --------------------
+if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
+    suggestions = get_suggestions(st.session_state.resume_text, st.session_state.job_desc)
+    st.markdown("### 📢 AI Suggestions")
+    st.write(suggestions)
 
-                st.markdown("### 🤖 AI Suggestions to Improve Your Resume")
-                ai_result = get_suggestions(resume_text.strip(), job_desc_input.strip())
-                if ai_result:
-                    st.markdown(f"<div class='suggest-card'>{ai_result}</div>", unsafe_allow_html=True)
-                else:
-                    st.info("AI did not return a detailed suggestion.")
+    # Show transform button only after suggestions
+    st.session_state.show_transform_button = True
 
-                # Save in session for transformation
-                st.session_state.resume_text = resume_text
-                st.session_state.job_desc = job_desc_input
-                st.session_state.missing_kw = missing
-                st.session_state.old_score = old_score
+# -------------------- TRANSFORM RESUME --------------------
+if st.session_state.get("show_transform_button"):
+    st.markdown("### 🚀 Do you want to transform your resume into an ATS-optimized template?")
 
-            except Exception as e:
-                st.error(f"Something went wrong: {e}")
+    if st.button("✅ Yes, Transform My Resume"):
+        with st.spinner("Optimizing your resume for the given job role..."):
+            optimized_data = optimize_resume_for_role(
+                st.session_state.parsed_resume,
+                st.session_state.job_desc
+            )
 
-# Step 2 – Transformation
-if "resume_text" in st.session_state and st.session_state.resume_text:
-    st.markdown("### 🚀 Ready to Transform Your Resume?")
-    if st.button("Yes, Transform My Resume"):
-        updated_resume = rewrite_resume_for_role(
-            st.session_state.resume_text,
-            st.session_state.job_desc,
-            st.session_state.missing_kw
+            buffer = build_template_resume(optimized_data)
+
+        st.success("🎯 Resume transformed successfully!")
+        st.download_button(
+            label="📥 Download Updated Resume (.docx)",
+            data=buffer,
+            file_name="updated_resume.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-        _, _, new_score = calculate_match_score(updated_resume, st.session_state.job_desc)
-        st.success(f"📈 ATS Score Improved: {st.session_state.old_score}% → {new_score}%")
-        st.text_area("Updated Resume Preview", value=updated_resume, height=400)
-
-       # AI optimized content ko structure me convert karo
-        optimized_data = {
-        "name": "Candidate Name",  # TODO: parse_resume_auto se extract karein
-        "contact": "Email | Phone | LinkedIn",
-        "summary": "Role-targeted professional summary here.",
-        "skills": ["Skill1", "Skill2", "Skill3"],  # AI se updated skills
-        "experience": [],  # Agar fresher hai toh empty rakho
-        "projects": [
-        {
-            "name": "Project Name",
-            "tech": "Tech Stack",
-            "details": ["Project bullet point 1", "Project bullet point 2"]
-        }
-        ],
-        "education": "Your education details here",
-        "certifications": []
-}
-
-        buffer = build_template_resume(optimized_data)
-
-        st.download_button(
-        label="📥 Download Updated Resume (.docx)",
-        data=buffer,
-        file_name="updated_resume.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
 
 
 st.markdown("</div>", unsafe_allow_html=True)

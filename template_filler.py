@@ -113,26 +113,22 @@ def add_experience_section(doc, experiences):
 
 
 def add_projects_section(doc, projects):
-    # Heading
-    p = doc.add_paragraph("PROJECTS")
-    run = p.runs[0]
-    run.bold = True
-    run.font.size = Pt(11)
-    run.font.name = "Calibri"
+    if not projects:
+        return
 
     for proj in projects:
-        # Title line
-        title_line = f"{proj.get('name', '')} – {proj.get('tech', '')}"
-        p = doc.add_paragraph(title_line)
-        p.runs[0].bold = True
-        p.runs[0].font.size = Pt(10)
-        p.runs[0].font.name = "Calibri"
+        if isinstance(proj, str):
+            # Convert string to dict with only 'name'
+            proj = {"name": proj, "tech": "", "description": ""}
+        elif not isinstance(proj, dict):
+            continue  # skip unknown formats
 
-        # Bullets
-        for bullet in proj.get("details", []):
-            para = doc.add_paragraph("• " + bullet)
-            para.style.font.name = "Calibri"
-            para.style.font.size = Pt(10)
+        title_line = f"{proj.get('name', '')} – {proj.get('tech', '')}"
+        doc.add_paragraph(title_line, style="Heading 3")
+
+        desc = proj.get("description", "")
+        if desc:
+            doc.add_paragraph(desc)
 
 
 def format_skills(skills):

@@ -146,7 +146,7 @@ RULES:
 -Keep truthful,no fake experience.
 -Do not remove candidate's real project or education,only reformat.
 -Project must always have exactly 3 bullet points:Objective, Tech Stack,Features
--Professional Summary must be exactly 2 lines including recent degree or eduaction along with college name and the other line should only include skill relevant to the JD in short
+-Professional Summary must be only of  2 lines which must include recent degree along with college name and the 2nd line should only include skill relevant to the JD in short.Do not write anything extra and do not any extra line.
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
 -Return JSON ONLY.No markdown, no text outside JSON.

@@ -182,30 +182,30 @@ if "resume_text" in st.session_state and st.session_state.resume_text:
         st.text_area("Updated Resume Preview", value=updated_resume, height=400)
 
        # AI optimized content ko structure me convert karo
-    optimized_data = {
-    "name": "Candidate Name",  # TODO: parse_resume_auto se extract karein
-    "contact": "Email | Phone | LinkedIn",
-    "summary": "Role-targeted professional summary here.",
-    "skills": ["Skill1", "Skill2", "Skill3"],  # AI se updated skills
-    "experience": [],  # Agar fresher hai toh empty rakho
-    "projects": [
+        optimized_data = {
+        "name": "Candidate Name",  # TODO: parse_resume_auto se extract karein
+        "contact": "Email | Phone | LinkedIn",
+        "summary": "Role-targeted professional summary here.",
+        "skills": ["Skill1", "Skill2", "Skill3"],  # AI se updated skills
+        "experience": [],  # Agar fresher hai toh empty rakho
+        "projects": [
         {
             "name": "Project Name",
             "tech": "Tech Stack",
             "details": ["Project bullet point 1", "Project bullet point 2"]
         }
-    ],
-    "education": "Your education details here",
-    "certifications": []
+        ],
+        "education": "Your education details here",
+        "certifications": []
 }
 
-buffer = build_template_resume(optimized_data)
+        buffer = build_template_resume(optimized_data)
 
-st.download_button(
-    label="📥 Download Updated Resume (.docx)",
-    data=buffer,
-    file_name="updated_resume.docx",
-    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        st.download_button(
+        label="📥 Download Updated Resume (.docx)",
+        data=buffer,
+        file_name="updated_resume.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 )
 
 

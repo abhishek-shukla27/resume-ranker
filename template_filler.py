@@ -72,25 +72,35 @@ def build_template_resume(data):
 
 
 def add_heading_with_line(doc, text):
-    
+    """
+    Heading with a line directly underneath, no extra space.
+    """
+    # Heading paragraph
     para = doc.add_paragraph()
     run = para.add_run(text.upper())
     run.bold = True
     run.font.size = Pt(12)
-    para.alignment=WD_ALIGN_PARAGRAPH   
+    para.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
-    para.paragraph_format.space_before=Pt(0)
-    para.paragraph_format.space_after=Pt(0)
+    # Remove extra space before/after
+    para.paragraph_format.space_before = Pt(0)
+    para.paragraph_format.space_after = Pt(0)
 
-    p_pr = para._p.get_or_add_pPr()
+    # Create the line paragraph (no gap)
+    line_para = doc.add_paragraph()
+    line_para.paragraph_format.space_before = Pt(0)
+    line_para.paragraph_format.space_after = Pt(2)
+
+    p_pr = line_para._p.get_or_add_pPr()
     p_borders = OxmlElement("w:pBdr")
-    bottom = OxmlElement("w:bottom")
-    bottom.set(qn("w:val"), "single")  # line type
-    bottom.set(qn("w:sz"), "4")        # thickness
-    bottom.set(qn("w:space"), "0")     # zero space between text and line
+    bottom = OxmlElement("w:top")  # top border so it appears above empty para
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "4")
+    bottom.set(qn("w:space"), "0")
     bottom.set(qn("w:color"), "000000")
     p_borders.append(bottom)
     p_pr.append(p_borders)
+
 
 
 def _format_projects(projects):

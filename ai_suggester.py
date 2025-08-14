@@ -1,17 +1,68 @@
 import os
-import re
+import requests
+from dotenv import load_dotenv
+from matcher import calculate_match_score
 import json
 import requests
 from copy import deepcopy
-from typing import Dict, Any, List
-from matcher import calculate_match_score
+from typing import Any,Dict,List
+import re
+load_dotenv()
 
 API_KEY = os.getenv("GROQ_API_KEY")
 MODEL_NAME = "llama3-8b-8192"
 BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+# ------------------- AI Suggestions ------------------- #
+def get_suggestions(resume_text, job_description):
+    """Get AI feedback on resume vs job description."""
+    try:
+        if not API_KEY:
+            return "❌ Error: GROQ_API_KEY not found in environment."
 
-# ===================== DEGREE & UNIVERSITY EXTRACTION ===================== #
+        prompt = f"""
+You are a helpful AI assistant reviewing a resume for a job application.
+Evaluate the resume against the job description and provide actionable suggestions.
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_description}
+
+Give your feedback in the following format:
+✅ Match Score (out of 10)
+⭐ Strengths
+🛠️ Areas to Improve
+📢 Overall Suggestion
+"""
+
+        payload = {
+            "model": MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": "You are a helpful resume evaluator."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7
+        }
+
+        resp = requests.post(BASE_URL, headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }, json=payload).json()
+
+        if "error" in resp:
+            return f"❌ API Error: {resp['error'].get('message', 'Unknown error')}"
+
+        if "choices" not in resp or not resp["choices"]:
+            return "❌ No response from AI model."
+
+        return resp["choices"][0]["message"]["content"].strip()
+
+    except Exception as e:
+        return f"❌ AI Suggestion Failed: {str(e)}"
+
+# ------------------- Resume Optimization ------------------- #
 def extract_degree_and_university(education_field):
     """Extracts degree, university, and year from education field (string/list)."""
     if isinstance(education_field, list):

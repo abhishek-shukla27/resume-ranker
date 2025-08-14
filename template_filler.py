@@ -3,7 +3,7 @@ from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-
+from io import BytesIO
 def build_template_resume(data):
     """
     Builds a DOCX resume from structured resume data.
@@ -55,7 +55,12 @@ def build_template_resume(data):
         for cert in data["certifications"]:
             add_bullet(doc, cert)
 
-    return doc
+    
+
+    buffer=BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
 
 
 def add_section(doc, title):

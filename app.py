@@ -158,10 +158,7 @@ if st.session_state.get("show_transform_button"):
                 st.session_state.job_desc
             )
 
-            doc = build_template_resume(optimized_data)
-            buffer=BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
+            buffer=build_template_resume(optimized_data)
 
         
             st.success("Resume transformed successfully!")

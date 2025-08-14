@@ -75,12 +75,12 @@ def build_template_resume(data):
 
 def add_heading_with_line(doc, text):
     """
-    Adds a bold, capitalized heading with a solid line after it.
+    Adds a bold, capitalized heading with a normal thickness line right below (no extra gap).
     """
     para = doc.add_paragraph(text.upper())
     run = para.runs[0]
     run.bold = True
-    run.font.size = Pt(6)
+    run.font.size = Pt(12)
 
     # Horizontal line
     p = doc.add_paragraph()
@@ -89,8 +89,8 @@ def add_heading_with_line(doc, text):
     p_borders = OxmlElement("w:pBdr")
     bottom = OxmlElement("w:bottom")
     bottom.set(qn("w:val"), "single")
-    bottom.set(qn("w:sz"), "6")
-    bottom.set(qn("w:space"), "0")
+    bottom.set(qn("w:sz"), "4")
+    bottom.set(qn("w:space"), "1")
     bottom.set(qn("w:color"), "000000")
     p_borders.append(bottom)
     p_pr.append(p_borders)

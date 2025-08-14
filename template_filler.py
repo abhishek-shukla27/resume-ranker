@@ -46,7 +46,7 @@ def build_template_resume(data):
             proj_para = doc.add_paragraph(proj["name"].upper())
             proj_para.runs[0].bold = True
             for bullet in proj["details"]:
-                doc.add_paragraph(f"• {bullet}", style="List Bullet")
+                doc.add_paragraph(bullet, style="List Bullet")
 
     # EDUCATION
     if data.get("education"):
@@ -74,19 +74,15 @@ def build_template_resume(data):
 
 
 def add_heading_with_line(doc, text):
-    """
-    Adds a bold, capitalized heading with a normal thickness line right below (no extra gap).
-    """
-    from docx.shared import Pt
-    from docx.oxml import OxmlElement
-    from docx.oxml.ns import qn
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-
+    
     para = doc.add_paragraph()
-    run = para.add_runs(text.upper())
+    run = para.add_run(text.upper())
     run.bold = True
     run.font.size = Pt(12)
     para.alignment=WD_ALIGN_PARAGRAPH   
+
+    para.paragraph_format.space_before=Pt(0)
+    para.paragraph_format.space_after=Pt(0)
 
     p_pr = para._p.get_or_add_pPr()
     p_borders = OxmlElement("w:pBdr")

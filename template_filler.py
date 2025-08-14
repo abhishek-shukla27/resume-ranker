@@ -1,113 +1,100 @@
 from docx import Document
-from docx.shared import Pt, RGBColor
+from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from io import BytesIO
-
-# Degree mapping for full form
-DEGREE_MAP = {
-    "mca": "Master of Computer Applications",
-    "mba": "Master of Business Administration",
-    "btech": "Bachelor of Technology",
-    "bca": "Bachelor of Computer Applications",
-    "bba": "Bachelor of Business Administration",
-    "bcom": "Bachelor of Commerce",
-    "bpharma": "Bachelor of Pharmacy",
-    "ballb": "Bachelor of Arts and Bachelor of Laws"
-}
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 def build_template_resume(data):
     """
-    Builds a DOCX resume from structured data with fixed formatting rules.
+    Builds a DOCX resume from structured resume data.
     """
     doc = Document()
 
-    # ===== Name =====
+    # Name
     name_para = doc.add_paragraph(data.get("name", ""))
+    name_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     name_para.runs[0].bold = True
     name_para.runs[0].font.size = Pt(16)
-    name_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # ===== Contact =====
+    # Contact
     contact_para = doc.add_paragraph(data.get("contact", ""))
     contact_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # ===== Summary =====
-    _add_section_heading(doc, "Professional Summary")
-    doc.add_paragraph(_format_summary(data))
+    # SUMMARY
+    add_heading_with_line(doc, "SUMMARY")
+    doc.add_paragraph(data.get("summary", ""))
 
-    _add_horizontal_line(doc)
+    # SKILLS
+    add_heading_with_line(doc, "SKILLS")
+    skills = ", ".join(data.get("skills", []))
+    doc.add_paragraph(skills)
 
-    # ===== Skills =====
-    if data.get("skills"):
-        _add_section_heading(doc, "Skills")
-        doc.add_paragraph(", ".join(data["skills"]))
-        _add_horizontal_line(doc)
+    # EXPERIENCE (skip if fresher)
+    if data.get("experience"):
+        add_heading_with_line(doc, "EXPERIENCE")
+        for exp in data["experience"]:
+            role_line = f"{exp.get('role', '')} – {exp.get('company', '')} ({exp.get('duration', '')})"
+            role_para = doc.add_paragraph(role_line)
+            role_para.runs[0].bold = True
+            for d in exp.get("details", []):
+                doc.add_paragraph(f"• {d}", style="List Bullet")
 
-    # ===== Projects =====
+    # PROJECTS
     if data.get("projects"):
-        _add_section_heading(doc, "Projects")
-        for proj in _format_projects(data.get("projects", [])):
-            doc.add_paragraph(proj["name"], style="List Bullet")
-            for detail in proj["details"]:
-                doc.add_paragraph(f"- {detail}", style="List Bullet 2")
-        _add_horizontal_line(doc)
+        add_heading_with_line(doc, "PROJECTS")
+        for proj in _format_projects(data["projects"]):
+            proj_para = doc.add_paragraph(proj["name"].upper())
+            proj_para.runs[0].bold = True
+            for bullet in proj["details"]:
+                doc.add_paragraph(f"• {bullet}", style="List Bullet")
 
-    # ===== Education =====
+    # EDUCATION
     if data.get("education"):
-        _add_section_heading(doc, "Education")
-        for edu in _format_education(data.get("education", [])):
-            doc.add_paragraph(edu)
-        _add_horizontal_line(doc)
+        add_heading_with_line(doc, "EDUCATION")
+        edu_list = data["education"]
+        if isinstance(edu_list, str):
+            doc.add_paragraph(edu_list)
+        elif isinstance(edu_list, list):
+            top_two = edu_list[:2]
+            for e in top_two:
+                doc.add_paragraph(f"• {e}")
 
-    # ===== Certifications =====
+    # CERTIFICATIONS
     if data.get("certifications"):
-        _add_section_heading(doc, "Certifications")
+        add_heading_with_line(doc, "CERTIFICATIONS")
         for cert in data["certifications"]:
-            doc.add_paragraph(cert, style="List Bullet")
+            doc.add_paragraph(f"• {cert}")
 
-    # Output to BytesIO
+    # Save to BytesIO
+    from io import BytesIO
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer
 
 
-# ================= Helper Functions ================= #
-
-def _add_section_heading(doc, title):
-    p = doc.add_paragraph(title)
-    p.runs[0].bold = True
-    p.runs[0].font.size = Pt(12)
-
-def _add_horizontal_line(doc):
-    # Just adding empty paragraph to simulate line break
-    doc.add_paragraph("")
-
-def _format_summary(data):
+def add_heading_with_line(doc, text):
     """
-    Fixed 2-line summary format based on degree, university, and top skills.
+    Adds a bold, capitalized heading with a solid line after it.
     """
-    # Extract degree & university
-    degree_full = ""
-    university = ""
-    edu_list = data.get("education", [])
+    para = doc.add_paragraph(text.upper())
+    run = para.runs[0]
+    run.bold = True
+    run.font.size = Pt(12)
 
-    if isinstance(edu_list, str):
-        edu_list = [edu_list]
+    # Horizontal line
+    p = doc.add_paragraph()
+    p_para = p._p
+    p_pr = p_para.get_or_add_pPr()
+    p_borders = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "12")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "000000")
+    p_borders.append(bottom)
+    p_pr.append(p_borders)
 
-    if edu_list:
-        edu_text = edu_list[0].lower()
-        for key, val in DEGREE_MAP.items():
-            if key in edu_text:
-                degree_full = val
-                break
-        university = " ".join(edu_list[0].split()[3:])  # crude extract
-
-    # Extract top 3 skills
-    skills = data.get("skills", [])
-    top_skills = ", ".join(skills[:3]) if skills else "relevant technologies"
-
-    return f"Enthusiastic and highly motivated recent graduate with a {degree_full} from {university}. Possess strong foundational knowledge in {top_skills}."
 
 def _format_projects(projects):
     """
@@ -125,21 +112,4 @@ def _format_projects(projects):
         bullets.append(f"Features: {details[1] if len(details) > 1 else 'N/A'}")
 
         formatted.append({"name": name, "details": bullets})
-    return formatted
-
-def _format_education(education):
-    """
-    Returns top 2 qualifications with full form and year.
-    """
-    if isinstance(education, str):
-        education = [education]
-
-    formatted = []
-    for entry in education[:2]:
-        text = entry
-        lower_text = text.lower()
-        for key, val in DEGREE_MAP.items():
-            if key in lower_text:
-                text = text.replace(key.upper(), val).replace(key.capitalize(), val)
-        formatted.append(text)
     return formatted

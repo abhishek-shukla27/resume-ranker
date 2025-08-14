@@ -325,7 +325,7 @@ def _dict_to_plain_text(data: Dict[str, Any]) -> str:
         for pr in data["projects"]:
             parts.append(f"{pr.get('name')} — {pr.get('tech')}")
             for b in _ensure_list(pr.get("details")):
-                parts.append(f"- {b}")
+                parts.append(str(b))
     if data.get("education"):
         parts.append("\nEducation:")
         if isinstance(data["education"], list):

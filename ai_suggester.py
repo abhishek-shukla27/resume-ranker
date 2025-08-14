@@ -146,7 +146,9 @@ RULES:
 -Keep truthful,no fake experience.
 -Do not remove candidate's real project or education,only reformat.
 -Project must always have exactly 3 bullet points:Objective, Tech Stack,Features
--Summary must follow EXACT wordings given above.
+-Summary MUST follow fixed sentence format given above.
+-No extra adjective,restructing or additional lines in summary.
+-Replace only placeholders for degree,university and skills.
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
 -Return JSON ONLY.No markdown, no text outside JSON.

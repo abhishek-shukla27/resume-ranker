@@ -154,29 +154,34 @@ if st.session_state.get("show_transform_button"):
     if st.button("✅ Yes, Transform My Resume"):
         with st.spinner("Optimizing your resume for the given job role..."):
             optimized_data = optimize_resume_for_role(
-                st.session_state.parsed_resume,
-                st.session_state.job_desc
-            )
+            st.session_state.parsed_resume,
+            st.session_state.job_desc
+        )
 
-            optimized_data["projects"] = optimized_data.get("projects") or []
-            optimized_data["skills"] = optimized_data.get("skills") or []
-            optimized_data["experience"] = optimized_data.get("experience") or []
-            optimized_data["certifications"] = optimized_data.get("certifications") or []
+        optimized_data["projects"] = optimized_data.get("projects") or []
+        optimized_data["skills"] = optimized_data.get("skills") or []
+        optimized_data["experience"] = optimized_data.get("experience") or []
+        optimized_data["certifications"] = optimized_data.get("certifications") or []
 
-            doc = build_template_resume(optimized_data)
-            buffer=BytesIO()
-            doc.save(buffer)
+        result = build_template_resume(optimized_data)
+
+        # Agar result Document hai to BytesIO me save karo
+        if hasattr(result, "save"):
+            buffer = BytesIO()
+            result.save(buffer)
+            buffer.seek(0)
+        else:
+            # Already BytesIO hai
+            buffer = result
             buffer.seek(0)
 
-        
-            st.success("Resume transformed successfully!")
-            st.download_button(
-                label="📥 Download Updated Resume (.docx)",
-                data=buffer,
-                file_name="updated_resume.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-        
+        st.success("Resume transformed successfully!")
+        st.download_button(
+            label="📥 Download Updated Resume (.docx)",
+            data=buffer,
+            file_name="updated_resume.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
             
 
 

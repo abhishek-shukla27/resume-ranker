@@ -248,6 +248,9 @@ def _ensure_list(x) -> List[Any]:
 def _coerce_string(val: Any, default: str = "") -> str:
     return str(val).strip() if val else default
 
+def _clean_bullet_text(text: str) -> str:
+    return re.sub(r'^[\s•\-\u2022]+', '', str(text)).strip()
+
 def _normalize_model_output(model_out: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
     out: Dict[str, Any] = {
         "name": _coerce_string(model_out.get("name"), fallback.get("name", "")),
@@ -265,7 +268,7 @@ def _normalize_model_output(model_out: Dict[str, Any], fallback: Dict[str, Any])
             "role": _coerce_string(item.get("role")),
             "company": _coerce_string(item.get("company")),
             "duration": _coerce_string(item.get("duration")),
-            "details": _ensure_list(item.get("details"))
+            "details": [_clean_bullet_text(d) for d in _ensure_list(item.get("details"))]
         })
 
     for item in _ensure_list(model_out.get("projects")):

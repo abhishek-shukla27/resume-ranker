@@ -37,7 +37,7 @@ def build_template_resume(data):
             role_para = doc.add_paragraph(role_line)
             role_para.runs[0].bold = True
             for d in exp.get("details", []):
-                doc.add_paragraph(f"• {d}", style="List Bullet")
+                doc.add_paragraph(d, style="List Bullet")
 
     # PROJECTS
     if data.get("projects"):
@@ -46,8 +46,8 @@ def build_template_resume(data):
             proj_para = doc.add_paragraph(proj["name"].upper())
             proj_para.runs[0].bold = True
             for bullet in proj["details"]:
-                doc.add_paragraph(bullet,style="List Bullet")
-                
+                doc.add_paragraph(d,style="List Bullet")
+
     # EDUCATION
     if data.get("education"):
         add_heading_with_line(doc, "EDUCATION")
@@ -74,28 +74,18 @@ def build_template_resume(data):
 
 
 def add_heading_with_line(doc, text):
-    """
-    Heading with a line directly underneath, no extra space.
-    """
-    # Heading paragraph
     para = doc.add_paragraph()
     run = para.add_run(text.upper())
     run.bold = True
     run.font.size = Pt(12)
     para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-
-    # Remove extra space before/after
     para.paragraph_format.space_before = Pt(0)
     para.paragraph_format.space_after = Pt(0)
 
-    # Create the line paragraph (no gap)
-    line_para = doc.add_paragraph()
-    line_para.paragraph_format.space_before = Pt(0)
-    line_para.paragraph_format.space_after = Pt(2)
-
-    p_pr = line_para._p.get_or_add_pPr()
+    # Add border directly to heading
+    p_pr = para._p.get_or_add_pPr()
     p_borders = OxmlElement("w:pBdr")
-    bottom = OxmlElement("w:top")  # top border so it appears above empty para
+    bottom = OxmlElement("w:bottom")
     bottom.set(qn("w:val"), "single")
     bottom.set(qn("w:sz"), "4")
     bottom.set(qn("w:space"), "0")

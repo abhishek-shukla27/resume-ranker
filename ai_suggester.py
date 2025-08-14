@@ -177,7 +177,7 @@ RULES:
 - Keep truthful, no fake experience.
 - Do not remove candidate's real projects or education, only reformat.
 - Summary MUST be EXACTLY 2 sentences in this fixed format:
-  "Enthusiastic and highly motivated recent graduate with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [key skills relevant to the job description]."
+  "Enthusiastic and highly motivated recent graduate with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [only two key skills which are mentioned strongly in uploaded resume and jd]."
 - Replace [key skills relevant to the job description] with the most relevant skills from both resume and job description.
 - Each project must have exactly 3 bullet points: Objective, Tech Stack, Features.
 - Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.

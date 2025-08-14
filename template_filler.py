@@ -77,20 +77,23 @@ def add_heading_with_line(doc, text):
     """
     Adds a bold, capitalized heading with a normal thickness line right below (no extra gap).
     """
-    para = doc.add_paragraph(text.upper())
-    run = para.runs[0]
+    from docx.shared import Pt
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    para = doc.add_paragraph()
+    run = para.add_runs(text.upper())
     run.bold = True
     run.font.size = Pt(12)
+    para.alignment=WD_ALIGN_PARAGRAPH   
 
-    # Horizontal line
-    p = doc.add_paragraph()
-    p_para = p._p
-    p_pr = p_para.get_or_add_pPr()
+    p_pr = para._p.get_or_add_pPr()
     p_borders = OxmlElement("w:pBdr")
     bottom = OxmlElement("w:bottom")
-    bottom.set(qn("w:val"), "single")
-    bottom.set(qn("w:sz"), "4")
-    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:val"), "single")  # line type
+    bottom.set(qn("w:sz"), "4")        # thickness
+    bottom.set(qn("w:space"), "0")     # zero space between text and line
     bottom.set(qn("w:color"), "000000")
     p_borders.append(bottom)
     p_pr.append(p_borders)
@@ -98,18 +101,26 @@ def add_heading_with_line(doc, text):
 
 def _format_projects(projects):
     """
-    Format projects with exactly 3 bullet points: Objective, Tech Stack, Features.
+    Format projects with 3 bullet points: Objective, Tech Stack, Features.
+    Only include non-empty items.
     """
     formatted = []
     for proj in projects:
         name = proj.get("name", "Untitled Project")
-        tech = proj.get("tech", "N/A")
+        tech = proj.get("tech", "")
         details = proj.get("details", [])
 
         bullets = []
-        bullets.append(f"Objective: {details[0] if details else 'N/A'}")
-        bullets.append(f"Tech Stack: {tech}")
-        bullets.append(f"Features: {details[1] if len(details) > 1 else 'N/A'}")
+        if details:
+            bullets.append(f"Objective: {details[0]}")
+        if tech:
+            bullets.append(f"Tech Stack: {tech}")
+        if len(details) > 1 and details[1]:
+            bullets.append(f"Features: {details[1]}")
 
         formatted.append({"name": name, "details": bullets})
     return formatted
+
+
+
+

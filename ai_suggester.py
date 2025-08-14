@@ -147,7 +147,7 @@ RULES:
 - Do not remove candidate's real projects or education, only reformat.
 - Projects must always have exactly 3 bullet points: Objective, Tech Stack, Features.
 - Summary MUST be EXACTLY 2 sentences in this fixed format:
-    "Enthusiastic and highly motivated recent graduate with a {degree_full_form} from [University Name]. Possess strong foundational knowledge in [key skills relevant to the job description]."
+    "Enthusiastic and highly motivated recent graduate with a {{Degree Full Form}} from {{University Name}}. Possess strong foundational knowledge in [key skills relevant to the job description]."
 - Do not change the sentence structure of the summary; only replace placeholders with actual details from the resume and job description.
 - Replace [Degree Full Form] and [University Name] from actual resume education data.
 - Replace [key skills relevant to the job description] with the most relevant skills from both resume and job description.

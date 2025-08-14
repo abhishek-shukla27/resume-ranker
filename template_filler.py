@@ -7,93 +7,106 @@ from docx.oxml.ns import qn
 def build_template_resume(data):
     """
     Builds a DOCX resume from structured resume data.
+    Returns BytesIO for download.
     """
     doc = Document()
 
-    # Name
+    # Name & contact
     name_para = doc.add_paragraph(data.get("name", ""))
+    name_para.style.font.size = Pt(18)
+    name_para.style.font.bold = True
     name_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    name_para.runs[0].bold = True
-    name_para.runs[0].font.size = Pt(16)
 
-    # Contact
     contact_para = doc.add_paragraph(data.get("contact", ""))
+    contact_para.style.font.size = Pt(10)
     contact_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # SUMMARY
-    add_heading_with_line(doc, "SUMMARY")
-    doc.add_paragraph(data.get("summary", ""))
+    add_section(doc, "SUMMARY")
+    doc.add_paragraph(data.get("summary", ""), style="Normal")
 
-    # SKILLS
-    add_heading_with_line(doc, "SKILLS")
+    add_section(doc, "SKILLS")
     skills = ", ".join(data.get("skills", []))
-    doc.add_paragraph(skills)
+    doc.add_paragraph(skills, style="Normal")
 
-    # EXPERIENCE (skip if fresher)
-    if data.get("experience"):
-        add_heading_with_line(doc, "EXPERIENCE")
-        for exp in data["experience"]:
-            role_line = f"{exp.get('role', '')} – {exp.get('company', '')} ({exp.get('duration', '')})"
-            role_para = doc.add_paragraph(role_line)
-            role_para.runs[0].bold = True
-            for d in exp.get("details", []):
-                doc.add_paragraph(f"• {d}", style="List Bullet")
+    add_section(doc, "EXPERIENCE")
+    for exp in data.get("experience", []):
+        if exp.get("role"):
+            p = doc.add_paragraph(f"{exp['role']} – {exp.get('company', '')} ({exp.get('duration', '')})")
+            p.style.font.bold = True
+            for detail in exp.get("details", []):
+                add_bullet(doc, detail)
 
-    # PROJECTS
-    if data.get("projects"):
-        add_heading_with_line(doc, "PROJECTS")
-        for proj in _format_projects(data["projects"]):
-            proj_para = doc.add_paragraph(proj["name"].upper())
-            proj_para.runs[0].bold = True
-            for bullet in proj["details"]:
-                doc.add_paragraph(f"• {bullet}", style="List Bullet")
+    add_section(doc, "PROJECTS")
+    for proj in _format_projects(data.get("projects", [])):
+        proj_title = doc.add_paragraph(proj["name"].upper())
+        proj_title.style.font.bold = True
+        for bullet in proj["details"]:
+            add_bullet(doc, bullet)
 
-    # EDUCATION
-    if data.get("education"):
-        add_heading_with_line(doc, "EDUCATION")
-        edu_list = data["education"]
-        if isinstance(edu_list, str):
-            doc.add_paragraph(edu_list)
-        elif isinstance(edu_list, list):
-            top_two = edu_list[:2]
-            for e in top_two:
-                doc.add_paragraph(f"• {e}")
+    add_section(doc, "EDUCATION")
+    if isinstance(data.get("education"), list):
+        for edu in data["education"]:
+            doc.add_paragraph(str(edu))
+    else:
+        doc.add_paragraph(str(data.get("education", "")))
 
-    # CERTIFICATIONS
     if data.get("certifications"):
-        add_heading_with_line(doc, "CERTIFICATIONS")
+        add_section(doc, "CERTIFICATIONS")
         for cert in data["certifications"]:
-            doc.add_paragraph(f"• {cert}")
+            add_bullet(doc, cert)
 
-    # Save to BytesIO
-    from io import BytesIO
-    buffer = BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer
+    return doc
 
 
-def add_heading_with_line(doc, text):
+def add_section(doc, title):
     """
-    Adds a bold, capitalized heading with a normal thickness line right below (no extra gap).
+    Adds a section heading with a thin underline and minimal spacing.
     """
-    para = doc.add_paragraph(text.upper())
-    run = para.runs[0]
-    run.bold = True
-    run.font.size = Pt(12)
+    heading = doc.add_paragraph(title.upper())
+    run = heading.runs[0]
+    run.font.bold = True
+    run.font.size = Pt(11)
+    heading.paragraph_format.space_after = Pt(2)
+    heading.paragraph_format.space_before = Pt(6)
+    add_horizontal_line(doc)
 
-    # Horizontal line
+
+def add_horizontal_line(doc):
+    """
+    Adds a thin horizontal line like in Prabhat Jha's resume.
+    """
     p = doc.add_paragraph()
-    p_para = p._p
-    p_pr = p_para.get_or_add_pPr()
-    p_borders = OxmlElement("w:pBdr")
-    bottom = OxmlElement("w:bottom")
-    bottom.set(qn("w:val"), "single")
-    bottom.set(qn("w:sz"), "4")
-    bottom.set(qn("w:space"), "1")
-    bottom.set(qn("w:color"), "000000")
-    p_borders.append(bottom)
-    p_pr.append(p_borders)
+    p.paragraph_format.space_after = Pt(2)
+    p.paragraph_format.space_before = Pt(0)
+    p._element.get_or_add_pPr().insert(0, _create_hrule())
+
+
+def _create_hrule():
+    """
+    Creates a thin solid horizontal line.
+    """
+    p = OxmlElement('w:p')
+    pPr = OxmlElement('w:pPr')
+    p.append(pPr)
+    pBdr = OxmlElement('w:pBdr')
+    pPr.append(pBdr)
+    bottom = OxmlElement('w:bottom')
+    bottom.set(qn('w:val'), 'single')
+    bottom.set(qn('w:sz'), '6')  # Thin line (1pt)
+    bottom.set(qn('w:space'), '1')
+    bottom.set(qn('w:color'), '000000')
+    pBdr.append(bottom)
+    return p
+
+
+def add_bullet(doc, text):
+    """
+    Adds a bullet point with proper spacing.
+    """
+    para = doc.add_paragraph(text, style="List Bullet")
+    para.paragraph_format.space_after = Pt(0)
+    para.paragraph_format.space_before = Pt(0)
+    para.paragraph_format.left_indent = Inches(0.25)
 
 
 def _format_projects(projects):

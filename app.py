@@ -158,9 +158,17 @@ if st.session_state.get("show_transform_button"):
                 st.session_state.job_desc
             )
 
-            buffer = build_template_resume(optimized_data)
+            optimized_data["projects"] = optimized_data.get("projects") or []
+            optimized_data["skills"] = optimized_data.get("skills") or []
+            optimized_data["experience"] = optimized_data.get("experience") or []
+            optimized_data["certifications"] = optimized_data.get("certifications") or []
 
-        if buffer:
+            doc = build_template_resume(optimized_data)
+            buffer=BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+
+        
             st.success("Resume transformed successfully!")
             st.download_button(
                 label="📥 Download Updated Resume (.docx)",
@@ -168,9 +176,8 @@ if st.session_state.get("show_transform_button"):
                 file_name="updated_resume.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-        else:
-            st.error("❌ Resume transformation failed. Please try again.")
-
+        
+            
 
 
 st.markdown("</div>", unsafe_allow_html=True)

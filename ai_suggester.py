@@ -166,10 +166,10 @@ Current Resume (plain text):
 {current_text}
 
 OUTPUT SCHEMA:
-{{
+{{ 
   "name": "string",
   "contact": "string",
-  "summary": "string"string (MUST be exactly 2 sentences in this format: 'Enthusiastic and highly motivated recent graduate with a [Degree Full Form] from [University Name]. Possess strong foundational knowledge in [key skills relevant to the job description].')",
+  "summary": "string",
   "skills": ["string"],,
   "skills": ["string"],
   "experience": [

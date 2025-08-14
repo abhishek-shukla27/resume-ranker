@@ -45,9 +45,7 @@ def build_template_resume(data):
         for proj in _format_projects(data["projects"]):
             proj_para = doc.add_paragraph(proj["name"].upper())
             proj_para.runs[0].bold = True
-            for bullet in proj["details"]:
-                doc.add_paragraph(bullet, style="List Bullet")
-
+           
     # EDUCATION
     if data.get("education"):
         add_heading_with_line(doc, "EDUCATION")

@@ -158,18 +158,18 @@ if st.session_state.get("show_transform_button"):
                 st.session_state.job_desc
             )
 
-            buffer=build_template_resume(optimized_data)
+            buffer = build_template_resume(optimized_data)
 
-        
+        if buffer:
             st.success("Resume transformed successfully!")
             st.download_button(
                 label="📥 Download Updated Resume (.docx)",
-                data=buffer.getvalue(),
+                data=buffer,
                 file_name="updated_resume.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-        
-            
+        else:
+            st.error("❌ Resume transformation failed. Please try again.")
 
 
 

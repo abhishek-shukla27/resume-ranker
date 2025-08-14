@@ -189,7 +189,7 @@ OUTPUT SCHEMA:
       "details": ["string"]
     }}
   ],
-  "education": "string or list",
+  "education": "[string]";
   "certifications": ["string"]
 }}
 

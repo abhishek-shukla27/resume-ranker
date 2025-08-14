@@ -143,17 +143,19 @@ You will transform the resume for the given job description and return STRICT JS
 Do NOT include any text outside JSON. Do NOT use markdown or backticks.
 
 RULES:
--Keep truthful,no fake experience.
--Do not remove candidate's real project or education,only reformat.
--Project must always have exactly 3 bullet points: Objective, Tech Stack,Features.
--Summary MUST be EXACTLY 2 sentences in this fixed format:
+- Keep truthful, no fake experience.
+- Do not remove candidate's real projects or education, only reformat.
+- Projects must always have exactly 3 bullet points: Objective, Tech Stack, Features.
+- Summary MUST be EXACTLY 2 sentences in this fixed format:
     "Enthusiastic and highly motivated recent graduate with a [Degree Full Form] from [University Name]. Possess strong foundational knowledge in [key skills relevant to the job description]."
--Replace [Degree Full Form] and [University Name] from actual resume education data.
--Replace [key skills relevant to the job description] with most relevant skills from both resume and job description.
-- Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
+- Do not change the sentence structure of the summary; only replace placeholders with actual details from the resume and job description.
+- Replace [Degree Full Form] and [University Name] from actual resume education data.
+- Replace [key skills relevant to the job description] with the most relevant skills from both resume and job description.
+- Education must have only the top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
--Return JSON ONLY.No markdown, no text outside JSON.
+- Return JSON ONLY. No markdown, no text outside JSON.
+
 
 INPUTS:
 Job Description:

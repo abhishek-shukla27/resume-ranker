@@ -175,5 +175,5 @@ if st.session_state.get("show_transform_button"):
 
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("---")
-st.markdown("These are auto-generated AI Resumes it may lead to wrong results, so kindly check all the details before applying carefully")
+st.markdown("These are auto-generated AI Resumes and sometimes it may lead to wrong info, so kindly check all the details before applying carefully")
 st.markdown("Built with ❤️ |\u00A9 Resume-Ranker.All rights reserved.")

@@ -170,21 +170,18 @@ def _json_schema_prompt(missing_kw: List[str], target_score: int, job_desc: str,
 You will transform the resume for the given job description and return STRICT JSON ONLY.
 
 RULES:
-- Keep truthful, no fake experience.
-- Do not remove candidate's real projects or education, only reformat & enhance for ATS.
-- If degree is detected as "{degree_full_form}", KEEP IT UNCHANGED.
-- Summary MUST be EXACTLY 2 sentences:
-  "Enthusiastic and highly motivated professional with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [two most relevant skills from both resume and job description]."
-- Skills list must merge relevant skills from resume and JD, remove unrelated ones.
-- Each project must have:
-  1. Name (UPPERCASE) — If missing, use original parsed name.
-  2. Objective
-  3. Tech Stack
-  4. Features
-- Education must have only top 2 qualifications (latest first) with degree full form, university name, and academic year.
-- Insert missing keywords naturally: {missing_str}
-- Target ATS score: {target_score}+
-- Output ONLY JSON.
+- Identify the exact role title from the job description and tailor all sections accordingly.
+- Keep only truthful information from the candidate's resume. No fake data.
+- Summary: 2 sentences ONLY. Format:
+  "Enthusiastic and highly motivated professional with a {degree_full_form} from {university_name}, aiming for the role of <ROLE FROM JD>. Possess strong skills in <top 2-3 relevant skills from resume & JD>."
+- Skills: Merge resume skills with top keywords from JD. Remove unrelated ones.
+- Experience: Keep candidate's jobs but reword bullet points to emphasize JD keywords. Reorder to put most relevant first.
+- Projects: Keep real project names but rewrite Objective / Tech Stack / Features to align with JD.
+- Education: Show only top 2 qualifications (latest first) with full degree name, institution, and year.
+- Certifications: Keep only JD-relevant ones. 
+- Add missing keywords naturally: {missing_str}
+- Target ATS Score: {target_score}+.
+- Output STRICTLY valid JSON matching schema.
 
 INPUTS:
 Job Description:

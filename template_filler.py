@@ -60,7 +60,16 @@ def build_template_resume(data):
             doc.add_paragraph(edu_list.strip())
         elif isinstance(edu_list, list):
             for e in edu_list[:2]:
-                doc.add_paragraph(e.strip(), style="List Bullet")
+                        if isinstance(e, dict):
+                            line = " • ".join(filter(None, [
+                                e.get("degree", "").strip(),
+                                e.get("university", "").strip(),
+                                e.get("year", "").strip()
+            ]))
+                            doc.add_paragraph(line)
+                        else:
+                            doc.add_paragraph(str(e).strip())
+
 
     # ===== CERTIFICATIONS =====
     if data.get("certifications"):

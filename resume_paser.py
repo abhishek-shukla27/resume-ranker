@@ -1,160 +1,102 @@
-# resume_parser.py
-"""
-Resume parser utilities.
-
-Functions:
-- parse_pdf_resume(file_bytes) -> dict
-- parse_docx_resume(file_bytes) -> dict
-- parse_resume_auto(file_bytes, filename) -> dict  # chooses PDF vs DOCX
-"""
-
-from typing import List, Dict
-import fitz  # PyMuPDF
-from docx import Document
 import re
-import io
+import fitz  # PyMuPDF
+import docx
+from typing import Dict, Any, List
 
-SECTION_KEYWORDS = {
-    "summary": ["summary", "professional summary", "profile", "about"],
-    "experience": ["experience", "work experience", "employment", "professional experience"],
-    "education": ["education", "academic", "qualifications"],
-    "skills": ["skills", "technical skills", "key skills"],
-    "certifications": ["certification", "certifications", "licenses"],
-    "projects": ["projects", "personal projects"],
+# Degree abbreviation mapping
+DEGREE_MAP = {
+    "MBA": "Master of Business Administration",
+    "MCA": "Master of Computer Applications",
+    "BTECH": "Bachelor of Technology",
+    "B.TECH": "Bachelor of Technology",
+    "BBA": "Bachelor of Business Administration",
+    "BPHARMA": "Bachelor of Pharmacy",
+    "B.PHARMA": "Bachelor of Pharmacy",
+    "BALLB": "Bachelor of Arts and Bachelor of Laws",
+    "B.A.LLB": "Bachelor of Arts and Bachelor of Laws",
+    "BSC": "Bachelor of Science",
+    "B.SC": "Bachelor of Science",
+    "BCA": "Bachelor of Computer Applications"
 }
 
-def _clean_text(s: str) -> str:
-    return re.sub(r'\r', '\n', s).strip()
+def normalize_degree(degree_text: str) -> str:
+    """Expand degree abbreviations."""
+    text = degree_text.upper()
+    for short, full in DEGREE_MAP.items():
+        if short in text:
+            return full
+    return degree_text.strip()
 
-def _split_paragraphs(text: str) -> List[str]:
-    # Split on two or more newlines, or lines that look like section breaks
-    paras = re.split(r'\n\s*\n+', text)
-    return [p.strip() for p in paras if p.strip()]
+def parse_pdf_resume(file_path: str) -> Dict[str, Any]:
+    text = ""
+    with fitz.open(file_path) as pdf:
+        for page in pdf:
+            text += page.get_text()
 
-def _find_section_by_heading(paras: List[str]) -> Dict[str, List[str]]:
-    sections = {k: [] for k in SECTION_KEYWORDS.keys()}
-    sections['other'] = []
+    return extract_sections(text)
 
-    current = "other"
-    for p in paras:
-        low = p.lower()
-        matched = False
-        for sec, keys in SECTION_KEYWORDS.items():
-            for k in keys:
-                # heading detection: paragraph equals heading or starts with heading
-                if (low == k) or low.startswith(k + ":") or low.startswith(k + " -") or low.startswith(k + " —") or re.match(rf'^{k}\b', low):
-                    current = sec
-                    matched = True
-                    break
-            if matched:
-                break
-        if not matched:
-            sections[current].append(p)
-    return sections
+def parse_docx_resume(file_path: str) -> Dict[str, Any]:
+    doc = docx.Document(file_path)
+    text = "\n".join([para.text for para in doc.paragraphs])
+    return extract_sections(text)
 
-def parse_pdf_resume(file_bytes: bytes) -> Dict:
-    """
-    Parse a PDF resume (bytes) and return a structured dict.
-    """
-    try:
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
-    except Exception as e:
-        raise RuntimeError(f"Failed to open PDF: {e}")
-
-    pages_text = []
-    for page in doc:
-        txt = page.get_text("text")
-        pages_text.append(txt)
-    full_text = "\n\n".join(pages_text)
-    full_text = _clean_text(full_text)
-
-    # heuristics: split into paragraphs and detect sections
-    paras = _split_paragraphs(full_text)
-    sections = _find_section_by_heading(paras)
-
-    # Try to guess name + contact from top paragraphs
-    name = ""
-    contact = ""
-    if paras:
-        top = paras[0].splitlines()
-        if len(top) > 0:
-            # name often first short line
-            candidate = top[0].strip()
-            if 2 <= len(candidate.split()) <= 4 and len(candidate) < 60:
-                name = candidate
-        # contact often in first 2-3 lines
-        for line in top[:4]:
-            if re.search(r'@|phone|tel|@gmail|@\w+\.\w+', line.lower()) or re.search(r'\+?\d{7,}', line):
-                contact += line.strip() + " | "
-
-    contact = contact.strip(" | ")
-
-    structured = {
-        "name": name,
-        "contact": contact,
-        "summary": "\n\n".join(sections.get("summary", [])).strip(),
-        "experience": sections.get("experience", []),
-        "education": sections.get("education", []),
-        "skills": sections.get("skills", []),
-        "certifications": sections.get("certifications", []),
-        "projects": sections.get("projects", []),
-        "other": sections.get("other", []),
-        "raw_text": full_text
+def extract_sections(text: str) -> Dict[str, Any]:
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    data = {
+        "name": lines[0] if lines else "",
+        "contact": extract_contact(text),
+        "summary": "",
+        "skills": extract_skills(text),
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": []
     }
-    return structured
 
-def parse_docx_resume(file_bytes: bytes) -> Dict:
-    """
-    Parse a DOCX resume (bytes) and return a structured dict.
-    """
-    bio = io.BytesIO(file_bytes)
-    doc = Document(bio)
-    paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-    text = "\n\n".join(paras)
-    paras_split = _split_paragraphs(text)
-    sections = _find_section_by_heading(paras_split)
+    # Extract education section
+    edu_matches = []
+    edu_pattern = re.compile(
+        r"(MCA|MBA|B\.?Tech|BBA|B\.?Pharma|BALLB|B\.?Sc|BCA).*?(University|College|School).*?(\d{4})?",
+        re.IGNORECASE
+    )
+    for match in edu_pattern.finditer(text):
+        degree_raw = match.group(1) or ""
+        degree_full = normalize_degree(degree_raw)
+        university = match.group(2) or ""
+        year = match.group(3) or ""
+        edu_matches.append({
+            "degree": degree_full,
+            "university": university.strip(),
+            "year": year.strip()
+        })
 
-    # guess name/contact similar to PDF
-    name = ""
-    contact = ""
-    if paras_split:
-        top = paras_split[0].splitlines()
-        if top:
-            candidate = top[0].strip()
-            if 2 <= len(candidate.split()) <= 4 and len(candidate) < 60:
-                name = candidate
-        for line in top[:4]:
-            if re.search(r'@|phone|tel|@gmail|@\w+\.\w+', line.lower()) or re.search(r'\+?\d{7,}', line):
-                contact += line.strip() + " | "
-    contact = contact.strip(" | ")
+    # If no structured match, fallback
+    if not edu_matches:
+        edu_matches.append({
+            "degree": "",
+            "university": "",
+            "year": ""
+        })
 
-    structured = {
-        "name": name,
-        "contact": contact,
-        "summary": "\n\n".join(sections.get("summary", [])).strip(),
-        "experience": sections.get("experience", []),
-        "education": sections.get("education", []),
-        "skills": sections.get("skills", []),
-        "certifications": sections.get("certifications", []),
-        "projects": sections.get("projects", []),
-        "other": sections.get("other", []),
-        "raw_text": text
-    }
-    return structured
+    data["education"] = edu_matches
 
-def parse_resume_auto(file_bytes: bytes, filename: str = "") -> Dict:
-    """
-    Auto-detect PDF vs DOCX (by filename) and parse accordingly.
-    Returns the same structured dict.
-    """
-    name = filename.lower()
-    if name.endswith(".pdf") or (b"%PDF" in file_bytes[:4]):
-        return parse_pdf_resume(file_bytes)
-    elif name.endswith(".docx"):
-        return parse_docx_resume(file_bytes)
-    else:
-        # fallback try PDF first then DOCX
-        try:
-            return parse_pdf_resume(file_bytes)
-        except Exception:
-            return parse_docx_resume(file_bytes)
+    return data
+
+def extract_contact(text: str) -> str:
+    phone = re.search(r"(\+?\d[\d\s-]{8,}\d)", text)
+    email = re.search(r"[\w\.-]+@[\w\.-]+", text)
+    contact_parts = []
+    if phone:
+        contact_parts.append(phone.group(1))
+    if email:
+        contact_parts.append(email.group(0))
+    return " | ".join(contact_parts)
+
+def extract_skills(text: str) -> List[str]:
+    skills_pattern = re.compile(r"(Skills|Technical Skills)\s*:\s*(.+)", re.IGNORECASE)
+    match = skills_pattern.search(text)
+    if match:
+        skills_str = match.group(2)
+        return [s.strip() for s in re.split(r",|;", skills_str) if s.strip()]
+    return []
+

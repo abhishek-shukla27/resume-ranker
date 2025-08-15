@@ -13,19 +13,19 @@ def build_template_resume(data):
     doc = Document()
 
     # ===== NAME =====
-    name_para = doc.add_paragraph(data.get("name", "").strip())
+    name_para = doc.add_paragraph(str(data.get("name", "")).strip())
     name_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     if name_para.runs:
         name_para.runs[0].bold = True
         name_para.runs[0].font.size = Pt(16)
 
     # ===== CONTACT =====
-    contact_para = doc.add_paragraph(data.get("contact", "").strip())
+    contact_para = doc.add_paragraph(str(data.get("contact", "")).strip())
     contact_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # ===== SUMMARY =====
     add_heading_with_line(doc, "SUMMARY")
-    summary_text = data.get("summary", "").strip()
+    summary_text = str(data.get("summary", "")).strip()
     if summary_text:
         doc.add_paragraph(summary_text)
 
@@ -33,7 +33,9 @@ def build_template_resume(data):
     add_heading_with_line(doc, "SKILLS")
     skills_list = data.get("skills", [])
     for skill in skills_list:
-        doc.add_paragraph(skill.strip(), style="List Bullet")
+        skill_str = str(skill).strip()
+        if skill_str:
+            doc.add_paragraph(skill_str, style="List Bullet")
 
     # ===== EXPERIENCE =====
     if data.get("experience"):
@@ -44,37 +46,43 @@ def build_template_resume(data):
             if role_para.runs:
                 role_para.runs[0].bold = True
             for d in exp.get("details", []):
-                if d.strip():
-                    doc.add_paragraph(d.strip(), style="List Bullet")
+                d_str = str(d).strip()
+                if d_str:
+                    doc.add_paragraph(d_str, style="List Bullet")
 
     # ===== PROJECTS =====
     if data.get("projects"):
         add_heading_with_line(doc, "PROJECTS")
         for proj in _format_projects(data["projects"]):
-            proj_para = doc.add_paragraph(proj["name"].upper())
+            proj_para = doc.add_paragraph(str(proj["name"]).upper())
             if proj_para.runs:
                 proj_para.runs[0].bold = True
             for bullet in proj["details"]:
-                if bullet.strip():
-                    doc.add_paragraph(bullet.strip(), style="List Bullet")
+                bullet_str = str(bullet).strip()
+                if bullet_str:
+                    doc.add_paragraph(bullet_str, style="List Bullet")
 
     # ===== EDUCATION =====
     if data.get("education"):
         add_heading_with_line(doc, "EDUCATION")
         edu_entries = data["education"]
         if isinstance(edu_entries, str):
-            doc.add_paragraph(edu_entries.strip())
+            edu_str = edu_entries.strip()
+            if edu_str:
+                doc.add_paragraph(edu_str)
         elif isinstance(edu_entries, list):
             for e in edu_entries[:2]:
-                if e.strip():
-                    doc.add_paragraph(e.strip(), style="List Bullet")
+                e_str = str(e).strip()
+                if e_str:
+                    doc.add_paragraph(e_str, style="List Bullet")
 
     # ===== CERTIFICATIONS =====
     if data.get("certifications"):
         add_heading_with_line(doc, "CERTIFICATIONS")
         for cert in data["certifications"]:
-            if cert.strip():
-                doc.add_paragraph(cert.strip(), style="List Bullet")
+            cert_str = str(cert).strip()
+            if cert_str:
+                doc.add_paragraph(cert_str, style="List Bullet")
 
     # ===== RETURN AS BYTESIO =====
     buffer = BytesIO()

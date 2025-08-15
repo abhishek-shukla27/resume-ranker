@@ -251,7 +251,7 @@ RULES:
 - Identify the exact role title from the job description and tailor all sections accordingly.
 - Keep only truthful information from the candidate's resume. No fake data.
 - Summary: 2 sentences ONLY. Format:
-  "Enthusiastic and highly motivated professional with a degree full form which is same in the uploaded resume by the user and from the university name which should also be same in the uploaded resume, aiming for the role of <ROLE FROM JD>. Possess strong skills in <top 2-3 relevant skills from resume & JD>."
+  "Enthusiastic and highly motivated professional with a degree full form and from the university name which should be same as it is from the uploaded resume(Never change them,never replace them and never invent new ones), aiming for the role of <ROLE FROM JD>. Possess strong skills in <top 2-3 relevant skills from resume & JD>."
 - Skills: Merge resume skills with top keywords from JD. Remove unrelated ones.
 - Experience: Keep candidate's jobs but reword bullet points to emphasize JD keywords. Reorder to put most relevant first.
 - Projects:Keep the project names the same as in the uploaded resume by the user, but rewrite the Objective, Tech Stack, and Features sections to align with the job description. Ensure grammar is correct.

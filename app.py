@@ -120,9 +120,7 @@ st.markdown("Upload your resume and paste the job description to get instant ATS
 
 resume_file = st.file_uploader("📄 Upload Your Resume (PDF)", type=["pdf"])
 job_desc_input = st.text_area("🧾 Paste Job Description", height=200)
-if resume_file is not None:
-    parsed=parse_resume_auto(resume_file.read(),resume_file.name)
-    st.session_state.parsed_resume = parsed
+
 if resume_file and job_desc_input.strip():
     # Read raw PDF bytes
     raw_bytes = resume_file.read()

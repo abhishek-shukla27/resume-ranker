@@ -3,10 +3,10 @@ import requests
 from dotenv import load_dotenv
 from matcher import calculate_match_score
 import json
-import requests
 from copy import deepcopy
-from typing import Any,Dict,List
+from typing import Any, Dict, List
 import re
+
 load_dotenv()
 
 API_KEY = os.getenv("GROQ_API_KEY")
@@ -63,260 +63,33 @@ Give your feedback in the following format:
         return f"❌ AI Suggestion Failed: {str(e)}"
 
 # ------------------- Resume Optimization ------------------- #
-DEGREE_MAP = {
-    "mca": "Master of Computer Applications",
-    "mba": "Master of Business Administration",
-    "bba": "Bachelor of Business Administration",
-    "bpharma": "Bachelor of Pharmacy",
-    "b.pharma": "Bachelor of Pharmacy",
-    "ballb": "Bachelor of Arts + Bachelor of Laws",
-    "b.tech": "Bachelor of Technology",
-    "btech": "Bachelor of Technology",
-    "mtech": "Master of Technology",
-    "msc": "Master of Science",
-    "bsc": "Bachelor of Science",
-    "llb": "Bachelor of Laws",
-    "ba": "Bachelor of Arts",
-    "ma": "Master of Arts",
-    "phd": "Doctor of Philosophy"
-}
-
-# ===== Detect Degree =====
-def detect_degree_and_university(education_field: Any) -> (str, str):
-    if not education_field:
-        return "", ""
-
-    text = " ".join(map(str, education_field)) if isinstance(education_field, list) else str(education_field)
-    text_lower = text.lower()
-
-    detected_degree = ""
-    for short, full in DEGREE_MAP.items():
-        if short in text_lower:
-            detected_degree = full
-            break
-
-    uni_match = re.search(r"(?:University|College|Institute|School)[^\n,]*", text, re.IGNORECASE)
-    university_name = uni_match.group(0).strip() if uni_match else ""
-
-    return detected_degree, university_name
-
-
-# ===== POST JSON to LLM =====
-def _post_json(payload: Dict[str, Any]) -> Dict[str, Any]:
-    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-    r = requests.post(BASE_URL, headers=headers, json=payload, timeout=60)
-    try:
-        return r.json()
-    except Exception:
-        return {"error": {"message": f"Non-JSON response (status {r.status_code})"}}
-
-
-# ===== JSON Extraction =====
-def _extract_json(s: str) -> str:
-    first, last = s.find("{"), s.rfind("}")
-    return s[first:last + 1] if first != -1 and last != -1 else s
-
-
-# ===== JSON Safe Load =====
-def _safe_json_loads(s: str):
-    try:
-        return json.loads(s)
-    except Exception:
-        return None
-
-
-# ===== Ensure List =====
-def _ensure_list(x) -> List[Any]:
-    if isinstance(x, list):
-        return x
-    return [x] if x else []
-
-
-# ===== Coerce String =====
-def _coerce_string(val: Any, default: str = "") -> str:
-    return str(val).strip() if val else default
-
-
-# ===== Clean Bullets =====
-def _clean_bullet_text(text: str) -> str:
-    return re.sub(r'^[\s•\-\u2022]+', '', str(text)).strip()
-
-
-# ===== Normalize Model Output =====
-def _normalize_model_output(model_out: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
-    out: Dict[str, Any] = {
-        "name": _coerce_string(model_out.get("name"), fallback.get("name", "")),
-        "contact": _coerce_string(model_out.get("contact"), fallback.get("contact", "")),
-        "summary": _coerce_string(model_out.get("summary"), fallback.get("summary", "")),
-        "skills": _ensure_list(model_out.get("skills")) or _ensure_list(fallback.get("skills", [])),
-        "experience": [],
-        "projects": [],
-        "education": model_out.get("education", fallback.get("education", "")),
-        "certifications": _ensure_list(model_out.get("certifications"))
-    }
-
-    for item in _ensure_list(model_out.get("experience")):
-        out["experience"].append({
-            "role": _coerce_string(item.get("role")),
-            "company": _coerce_string(item.get("company")),
-            "duration": _coerce_string(item.get("duration")),
-            "details": [_clean_bullet_text(d) for d in _ensure_list(item.get("details"))]
-        })
-
-    for item in _ensure_list(model_out.get("projects")):
-        out["projects"].append({
-            "name": _coerce_string(item.get("name")),
-            "tech": _coerce_string(item.get("tech")),
-            "details": _ensure_list(item.get("details"))
-        })
-
-    return out
-
-
-# ===== Coerce Resume Dict =====
-def _coerce_resume_dict(d: Dict[str, Any]) -> Dict[str, Any]:
-    coerced = {
-        "name": _coerce_string(d.get("name")),
-        "contact": _coerce_string(d.get("contact")),
-        "summary": _coerce_string(d.get("summary")),
-        "skills": _ensure_list(d.get("skills")),
-        "experience": [],
-        "projects": [],
-        "education": d.get("education", ""),
-        "certifications": _ensure_list(d.get("certifications"))
-    }
-
-    for item in _ensure_list(d.get("experience")):
-        coerced["experience"].append({
-            "role": _coerce_string(item.get("role")),
-            "company": _coerce_string(item.get("company")),
-            "duration": _coerce_string(item.get("duration")),
-            "details": _ensure_list(item.get("details"))
-        })
-
-    for item in _ensure_list(d.get("projects")):
-        coerced["projects"].append({
-            "name": _coerce_string(item.get("name")),
-            "tech": _coerce_string(item.get("tech")),
-            "details": _ensure_list(item.get("details"))
-        })
-
-    return coerced
-
-
-# ===== Dict to Plain Text =====
-def _dict_to_plain_text(data: Dict[str, Any]) -> str:
-    parts = [str(data.get("name", "")), str(data.get("contact", ""))]
-    if data.get("summary"):
-        parts.append("\nSummary:")
-        parts.append(str(data["summary"]))
-    if data.get("skills"):
-        parts.append("\nSkills:")
-        parts.append(", ".join(map(str, data["skills"])))
-    if data.get("experience"):
-        parts.append("\nExperience:")
-        for exp in data["experience"]:
-            parts.append(f"{exp.get('role')} @ {exp.get('company')} ({exp.get('duration')})")
-            for b in _ensure_list(exp.get("details")):
-                parts.append(f"- {b}")
-    if data.get("projects"):
-        parts.append("\nProjects:")
-        for pr in data["projects"]:
-            parts.append(f"{pr.get('name')} — {pr.get('tech')}")
-            for b in _ensure_list(pr.get("details")):
-                parts.append(str(b))
-    if data.get("education"):
-        parts.append("\nEducation:")
-        if isinstance(data["education"], list):
-            parts.extend(map(str, data["education"]))
-        else:
-            parts.append(str(data["education"]))
-    if data.get("certifications"):
-        parts.append("\nCertifications:")
-        parts.append(", ".join(map(str, data["certifications"])))
-    return "\n".join([p for p in parts if str(p).strip()])
-
-
-# ===== Prompt Builder =====
-def _json_schema_prompt(missing_kw: List[str], target_score: int, job_desc: str,
-                        working_dict: Dict[str, Any], current_text: str,
-                        degree_full_form: str, university_name: str) -> str:
-    missing_str = ", ".join(missing_kw) if missing_kw else "none"
-    baseline_json = json.dumps(_coerce_resume_dict(working_dict), ensure_ascii=False)
-
-    return f"""
-You are an expert ATS resume writer. Rewrite the resume STRICTLY for the following job description.
-
-RULES:
-- Identify the exact role title from the job description and tailor all sections accordingly.
-- Keep only truthful information from the candidate's resume. No fake data.
-- Summary: 2 sentences ONLY. Format:
-  "Enthusiastic and highly motivated professional with a degree full form (use exact degree name from the uploaded resume) and from the university name (use the exact university name which is there in the uploaded resume.Do not change them,replace them and never invent new ones), aiming for the role of <ROLE FROM JD>. Possess strong skills in <top 2-3 relevant skills from resume & JD>."
-- Skills: Merge resume skills with top keywords from JD. Remove unrelated ones.
-- Experience: Keep candidate's jobs but reword bullet points to emphasize JD keywords. Reorder to put most relevant first.
-- Projects:Keep the project names the same as in the uploaded resume by the user, but rewrite the Objective, Tech Stack, and Features sections to align with the job description. Ensure grammar is correct.
-- Education: Show all qualifications which are there in the uploaded resume  with full degree name, institution, and year.
-- Certifications: Keep only JD-relevant ones. Others go as 'Additional Certifications'.
-- Add missing keywords naturally: {missing_str}
-- Target ATS Score: {target_score}+.
-- Output STRICTLY valid JSON matching schema.
-
-Job Description:
-{job_desc}
-
-Current Resume (structured JSON):
-{baseline_json}
-
-Current Resume (plain text):
-{current_text}
-
-OUTPUT SCHEMA:
-{{
-  "name": "string",
-  "contact": "string",
-  "summary": "string",
-  "skills": ["string"],
-  "experience": [
-    {{
-      "role": "string",
-      "company": "string",
-      "duration": "string",
-      "details": ["string"]
-    }}
-  ],
-  "projects": [
-    {{
-      "name": "string",
-      "tech": "string",
-      "details": ["string"]
-    }}
-  ],
-  "education": "string",
-  "certifications": ["string"]
-}}
-"""
-
-
-# ===== Main Optimization Function =====
 def optimize_resume_for_role(parsed_resume: Dict[str, Any], job_desc: str,
                               target_score: int = 90, max_rounds: int = 2) -> Dict[str, Any]:
     if not API_KEY:
         return _coerce_resume_dict(parsed_resume)
 
-    degree_full_form, university_name = detect_degree_and_university(parsed_resume.get("education"))
+    # Extract degree & university directly from resume (NO guessing!)
+    education_field = parsed_resume.get("education")
+    degree_full_form, university_name = detect_degree_and_university(education_field)
+
     current_text = _dict_to_plain_text(parsed_resume)
     _, missing_kw, score = calculate_match_score(current_text, job_desc)
     working = deepcopy(parsed_resume)
 
     for _ in range(max_rounds):
-        json_schema = _json_schema_prompt(missing_kw, target_score, job_desc,
-                                          working, current_text,
-                                          degree_full_form, university_name)
+        json_schema = _json_schema_prompt(
+            missing_kw, target_score, job_desc,
+            working, current_text,
+            degree_full_form, university_name
+        )
 
         payload = {
             "model": MODEL_NAME,
             "messages": [
-                {"role": "system", "content": "You are an expert ATS resume writer. Return ONLY valid JSON."},
+                {"role": "system",
+                 "content": (
+                     "You are an expert ATS resume writer. Return ONLY valid JSON matching schema."
+                 )},
                 {"role": "user", "content": json_schema}
             ],
             "temperature": 0.1,
@@ -347,3 +120,208 @@ def optimize_resume_for_role(parsed_resume: Dict[str, Any], job_desc: str,
             break
 
     return _coerce_resume_dict(working)
+
+
+# ===== PROMPT BUILDER =====
+def _json_schema_prompt(missing_kw: List[str], target_score: int, job_desc: str,
+                        working_dict: Dict[str, Any], current_text: str,
+                        degree_full_form: str, university_name: str) -> str:
+    missing_str = ", ".join(missing_kw) if missing_kw else "none"
+    baseline_json = json.dumps(_coerce_resume_dict(working_dict), ensure_ascii=False)
+
+    return f"""
+You will transform the resume for the given job description and return STRICT JSON ONLY.
+
+RULES:
+- Keep truthful, no fake experience.
+- Do not remove candidate's real projects or education, only reformat.
+- Use exactly the degree and university name from the uploaded resume in Summary and Education. Do not change, do not replace, do not invent.
+- Summary MUST be EXACTLY 2 sentences in this fixed format:
+  "Enthusiastic and highly motivated professional with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [only two key skills which are mentioned strongly in uploaded resume and jd]."
+- Replace [two key skills] with the most relevant skills from both resume and job description.
+- Each project must have exactly 3 bullet points: Objective, Tech Stack, Features.
+- Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
+- Insert missing keywords naturally: {missing_str}
+- Target ATS score: {target_score}+.
+- Return ONLY the JSON.
+
+INPUTS:
+Job Description:
+{job_desc}
+
+Current Resume (structured):
+{baseline_json}
+
+Current Resume (plain text):
+{current_text}
+
+OUTPUT SCHEMA:
+{{
+  "name": "string",
+  "contact": "string",
+  "summary": "string",
+  "skills": ["string"],
+  "experience": [
+    {{
+      "role": "string",
+      "company": "string",
+      "duration": "string",
+      "details": ["string"]
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "string",
+      "tech": "string",
+      "details": ["string"]
+    }}
+  ],
+  "education": "string or list",
+  "certifications": ["string"]
+}}
+"""
+
+
+# ===== UTIL FUNCS =====
+def detect_degree_and_university(education_field: Any) -> (str, str):
+    """
+    Extract degree and university name directly from parsed resume text.
+    Never invent new ones.
+    """
+    if not education_field:
+        return "", ""
+
+    text = ""
+    if isinstance(education_field, list):
+        text = " ".join(map(str, education_field))
+    elif isinstance(education_field, str):
+        text = education_field
+
+    # Degree = whatever is written in resume
+    degree_match = re.search(r"(Master|Bachelor|Doctor|Diploma|Associate|PhD)[^\n,]*", text, re.IGNORECASE)
+    degree_name = degree_match.group(0).strip() if degree_match else ""
+
+    # University = whatever is written in resume
+    uni_match = re.search(r"(?:University|College|Institute|School)[^\n,]*", text, re.IGNORECASE)
+    university_name = uni_match.group(0).strip() if uni_match else ""
+
+    return degree_name, university_name
+
+
+def _post_json(payload: Dict[str, Any]) -> Dict[str, Any]:
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    r = requests.post(BASE_URL, headers=headers, json=payload, timeout=60)
+    try:
+        return r.json()
+    except Exception:
+        return {"error": {"message": f"Non-JSON response (status {r.status_code})"}}
+
+def _extract_json(s: str) -> str:
+    first, last = s.find("{"), s.rfind("}")
+    return s[first:last+1] if first != -1 and last != -1 else s
+
+def _safe_json_loads(s: str):
+    try:
+        return json.loads(s)
+    except Exception:
+        return None
+
+def _ensure_list(x) -> List[Any]:
+    if isinstance(x, list):
+        return x
+    return [x] if x else []
+
+def _coerce_string(val: Any, default: str = "") -> str:
+    return str(val).strip() if val else default
+
+def _clean_bullet_text(text: str) -> str:
+    return re.sub(r'^[\s•\-\u2022]+', '', str(text)).strip()
+
+def _normalize_model_output(model_out: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {
+        "name": _coerce_string(model_out.get("name"), fallback.get("name", "")),
+        "contact": _coerce_string(model_out.get("contact"), fallback.get("contact", "")),
+        "summary": _coerce_string(model_out.get("summary"), fallback.get("summary", "")),
+        "skills": _ensure_list(model_out.get("skills")) or _ensure_list(fallback.get("skills", [])),
+        "experience": [],
+        "projects": [],
+        "education": model_out.get("education", fallback.get("education", "")),
+        "certifications": _ensure_list(model_out.get("certifications"))
+    }
+
+    for item in _ensure_list(model_out.get("experience")):
+        out["experience"].append({
+            "role": _coerce_string(item.get("role")),
+            "company": _coerce_string(item.get("company")),
+            "duration": _coerce_string(item.get("duration")),
+            "details": [_clean_bullet_text(d) for d in _ensure_list(item.get("details"))]
+        })
+
+    for item in _ensure_list(model_out.get("projects")):
+        out["projects"].append({
+            "name": _coerce_string(item.get("name")),
+            "tech": _coerce_string(item.get("tech")),
+            "details": _ensure_list(item.get("details"))
+        })
+
+    return out
+
+def _coerce_resume_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+    coerced = {
+        "name": _coerce_string(d.get("name")),
+        "contact": _coerce_string(d.get("contact")),
+        "summary": _coerce_string(d.get("summary")),
+        "skills": _ensure_list(d.get("skills")),
+        "experience": [],
+        "projects": [],
+        "education": d.get("education", ""),
+        "certifications": _ensure_list(d.get("certifications"))
+    }
+
+    for item in _ensure_list(d.get("experience")):
+        coerced["experience"].append({
+            "role": _coerce_string(item.get("role")),
+            "company": _coerce_string(item.get("company")),
+            "duration": _coerce_string(item.get("duration")),
+            "details": _ensure_list(item.get("details"))
+        })
+
+    for item in _ensure_list(d.get("projects")):
+        coerced["projects"].append({
+            "name": _coerce_string(item.get("name")),
+            "tech": _coerce_string(item.get("tech")),
+            "details": _ensure_list(item.get("details"))
+        })
+
+    return coerced
+
+def _dict_to_plain_text(data: Dict[str, Any]) -> str:
+    parts = [str(data.get("name", "")), str(data.get("contact", ""))]
+    if data.get("summary"):
+        parts.append("\nSummary:")
+        parts.append(str(data["summary"]))
+    if data.get("skills"):
+        parts.append("\nSkills:")
+        parts.append(", ".join(map(str, data["skills"])))
+    if data.get("experience"):
+        parts.append("\nExperience:")
+        for exp in data["experience"]:
+            parts.append(f"{exp.get('role')} @ {exp.get('company')} ({exp.get('duration')})")
+            for b in _ensure_list(exp.get("details")):
+                parts.append(f"- {b}")
+    if data.get("projects"):
+        parts.append("\nProjects:")
+        for pr in data["projects"]:
+            parts.append(f"{pr.get('name')} — {pr.get('tech')}")
+            for b in _ensure_list(pr.get("details")):
+                parts.append(str(b))
+    if data.get("education"):
+        parts.append("\nEducation:")
+        if isinstance(data["education"], list):
+            parts.extend(map(str, data["education"]))
+        else:
+            parts.append(str(data["education"]))
+    if data.get("certifications"):
+        parts.append("\nCertifications:")
+        parts.append(", ".join(map(str, data["certifications"])))
+    return "\n".join([p for p in parts if str(p).strip()])

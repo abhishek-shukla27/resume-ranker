@@ -33,6 +33,7 @@ Job Description:
 {job_description}
 
 Give your feedback in the following format:
+🤖ATS Score (out of 100)
 ✅ Match Score (out of 10)
 ⭐ Strengths
 🛠️ Areas to Improve

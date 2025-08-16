@@ -45,6 +45,19 @@ hide_streamlit_style = """
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    /* Hide top menu & profile toolbar */
+    #MainMenu {visibility: hidden !important;}
+    header {visibility: hidden !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+
+    /* Hide Streamlit footer (includes "Hosted with Streamlit") */
+    footer {visibility: hidden !important;}
+    [data-testid="stFooter"] {display: none !important;}
+    </style>
+""", unsafe_allow_html=True)
+
 
 # Custom CSS (unchanged)
 st.markdown(""" 

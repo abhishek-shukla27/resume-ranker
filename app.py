@@ -190,5 +190,27 @@ if st.session_state.get("show_transform_button"):
 
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("---")
-st.markdown("These are auto-generated AI Resumes and sometimes it may lead to wrong info, so kindly check all the details carefully before applying.")
+st.markdown(
+    """
+    <div style='padding: 15px; border-radius: 10px; background-color: rgba(255,0,0,0.1); border: 1px solid #ef4444;'>
+        ⚠️ <b>Important Notice:</b><br>
+        These resumes are <b>AI-generated</b> and may sometimes contain errors, missing info, or unintended changes.<br>
+        <u>Please verify all details before using the resume for job applications.</u>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+st.markdown("## 💬 Share Your Feedback")
+with st.form("feedback_form", clear_on_submit=True):
+    rating = st.radio("How helpful was Resume Ranker?", ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"])
+    comments = st.text_area("Any suggestions or issues?", placeholder="Tell us what we can improve...")
+    submitted = st.form_submit_button("Submit Feedback")
+    if submitted:
+        # Optionally: store in session/local
+        st.session_state.setdefault("feedback", []).append({
+            "rating": rating,
+            "comments": comments
+        })
+        st.success("✅ Thanks for your feedback! It helps us improve.")
+st.markdown("---")
 st.markdown("Built with ❤️ |\u00A9 Resume-Ranker.All rights reserved.")

@@ -71,21 +71,20 @@ def build_template_resume(data):
                 university = e.get("university", "").strip()
                 start_year = e.get("start_year", "").strip() if e.get("start_year") else ""
                 end_year = e.get("end_year", "").strip() if e.get("end_year") else ""
-                year = e.get("year", "").strip() if e.get("year") else ""
+                
 
                 # Line 1 → Degree — University
                 line1 = " — ".join([deg for deg in [degree, university] if deg])
                 if line1:
                     p = doc.add_paragraph(line1)
-                    p.runs[0].bold = True
+                    p.runs[0] = True
                     p.runs[0].font.size = Pt(11)
 
                 # Line 2 → Years
                 year_text = ""
                 if start_year and end_year:
                     year_text = f"{start_year} – {end_year}"
-                elif year:
-                    year_text = year
+               
 
                 if year_text:
                     p2 = doc.add_paragraph(year_text)

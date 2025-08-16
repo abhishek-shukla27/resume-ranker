@@ -65,13 +65,35 @@ def build_template_resume(data):
     if data.get("education"):
         add_heading_with_line(doc, "EDUCATION")
         if isinstance(data["education"], list):
-            top_two = [e for e in data["education"] if str(e).strip()][:2]
+            top_two = [e for e in data["education"] if isinstance(e, dict) and (e.get("degree") or e.get("university"))][:2]
             for e in top_two:
-                doc.add_paragraph(str(e).strip(), style="List Bullet")
+                degree = e.get("degree", "").strip()
+                university = e.get("university", "").strip()
+                start_year = e.get("start_year", "").strip() if e.get("start_year") else ""
+                end_year = e.get("end_year", "").strip() if e.get("end_year") else ""
+                year = e.get("year", "").strip() if e.get("year") else ""
+
+                # Line 1 → Degree — University
+                line1 = " — ".join([deg for deg in [degree, university] if deg])
+                if line1:
+                    p = doc.add_paragraph(line1)
+                    p.runs[0].bold = True
+                    p.runs[0].font.size = Pt(11)
+
+                # Line 2 → Years
+                year_text = ""
+                if start_year and end_year:
+                    year_text = f"{start_year} – {end_year}"
+                elif year:
+                    year_text = year
+
+                if year_text:
+                    p2 = doc.add_paragraph(year_text)
+                    p2.runs[0].font.size = Pt(10)
         else:
             edu_text = str(data["education"]).strip()
             if edu_text:
-                doc.add_paragraph(edu_text, style="List Bullet")
+                doc.add_paragraph(edu_text)
 
     # ===== CERTIFICATIONS =====
     if data.get("certifications"):

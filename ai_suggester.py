@@ -21,7 +21,6 @@ def get_suggestions(resume_text, job_description):
             return "❌ Error: GROQ_API_KEY not found in environment."
 
         prompt = f"""
-
 You are a helpful AI assistant reviewing a resume for a job application.
 Evaluate the resume against the job description and provide actionable suggestions.
 You should also provide the ATS score of the uploaded resume.
@@ -33,7 +32,7 @@ Job Description:
 {job_description}
 
 Give your feedback in the following format:
-🤖ATS Score (out of 100)
+🤖 ATS Score (out of 100)
 ✅ Match Score (out of 10)
 ⭐ Strengths
 🛠️ Areas to Improve

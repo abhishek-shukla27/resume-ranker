@@ -21,8 +21,10 @@ def get_suggestions(resume_text, job_description):
             return "❌ Error: GROQ_API_KEY not found in environment."
 
         prompt = f"""
+
 You are a helpful AI assistant reviewing a resume for a job application.
 Evaluate the resume against the job description and provide actionable suggestions.
+You should also provide the ATS score of the uploaded resume.
 
 Resume:
 {resume_text}
@@ -31,7 +33,7 @@ Job Description:
 {job_description}
 
 Give your feedback in the following format:
-✅ Match Score (out of 10)
+✅ Match Score (out of 100)
 ⭐ Strengths
 🛠️ Areas to Improve
 📢 Overall Suggestion
@@ -140,7 +142,6 @@ RULES:
   "Enthusiastic and highly motivated professional with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [only two key skills which are mentioned strongly in uploaded resume and jd]."
 - Replace [two key skills] with the most relevant skills from both resume and job description.
 - Each project must have exactly 3 bullet points: Objective, Tech Stack, Features.
-- Add one project on your own which matches the job description and it must have exactly 3 bullet points: Objective,Tech Stack ,Features.
 - Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.

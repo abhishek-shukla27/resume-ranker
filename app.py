@@ -21,7 +21,22 @@ from template_filler import build_template_resume
 
 # --------------- CONFIG & THEME ---------------- #
 st.set_page_config(page_title="Resume Ranker", layout="centered", page_icon="📄")
-
+st.markdown(
+    """
+    <style>
+    @media (max-width: 600px) {
+        .block-container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        textarea, input {
+            font-size: 14px !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}

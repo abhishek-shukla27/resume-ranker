@@ -140,6 +140,7 @@ RULES:
   "Enthusiastic and highly motivated professional with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [only two key skills which are mentioned strongly in uploaded resume and jd]."
 - Replace [two key skills] with the most relevant skills from both resume and job description.
 - Each project must have exactly 3 bullet points: Objective, Tech Stack, Features.
+- Add one project on your own which matches the job description and it must have exactly 3 bullet points: Objective,Tech Stack ,Features.
 - Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.

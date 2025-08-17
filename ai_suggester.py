@@ -141,6 +141,7 @@ RULES:
 - Summary MUST be EXACTLY 2 sentences in this fixed format:
   "Enthusiastic and highly motivated professional with a {degree_full_form} from {university_name}. Possess strong foundational knowledge in [only two key skills which are mentioned strongly in uploaded resume and jd]."
 - Replace [two key skills] with the most relevant skills from both resume and job description.
+- Add each project from the uploaded resume do not remove the projects and do not change their original name.
 - Each project must have exactly 3 bullet points: Objective, Tech Stack, Features.
 - Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
 - Insert missing keywords naturally: {missing_str}

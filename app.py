@@ -143,7 +143,7 @@ if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
                 st.write(f"- {s}")
 
         if "overall" in st.session_state.suggestions:
-            st.subheader("📢 Overall Suggestion")
+            
             st.write(st.session_state.suggestions["overall"])
     else:
         st.write(st.session_state.suggestions)

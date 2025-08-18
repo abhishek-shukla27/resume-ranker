@@ -87,7 +87,7 @@ if "user" not in st.session_state:
 st.sidebar.success(f"✅ Logged in as {st.session_state['user']['email']}")
 if st.sidebar.button("Logout"):
     st.session_state.clear()
-    st.experimental_rerun()
+    st.rerun()
 
 # ---------------- MAIN ---------------- #
 load_dotenv()

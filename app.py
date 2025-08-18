@@ -153,9 +153,6 @@ if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
 
 
 # Always show AI suggestions if available
-if "suggestions" in st.session_state:
-    st.markdown("### 📢 AI Suggestions")
-    st.write(st.session_state.suggestions)
 
 
 # --- Transform Resume ---

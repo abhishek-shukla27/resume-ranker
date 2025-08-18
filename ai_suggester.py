@@ -14,7 +14,7 @@ MODEL_NAME = "llama3-8b-8192"
 BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # ------------------- AI Suggestions ------------------- #
-def get_suggestions(resume_text, job_description,ats_score,match_score):
+def get_suggestions(resume_text, job_description):
     """Get AI feedback on resume vs job description."""
     try:
         if not API_KEY:

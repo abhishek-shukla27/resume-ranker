@@ -109,24 +109,45 @@ if resume_file and job_desc_input.strip():
 
 # --- AI Suggestions ---
 if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
-    
-    ats_score,match_score,suggestions = get_suggestions(
+    result = get_suggestions(
         st.session_state.resume_text,
         st.session_state.job_desc
     )
-    st.session_state.ats_score=ats_score
-    st.session_state.match_score=match_score
-    st.session_state.suggestions=suggestions
+
+    if isinstance(result, str):  # if AI returned plain text (error or raw response)
+        st.session_state.suggestions = {"overall": result}
+    else:
+        st.session_state.ats_score = result.get("ats_score", "N/A")
+        st.session_state.match_score = result.get("match_score", "N/A")
+        st.session_state.suggestions = result.get("suggestions", {})
+
     st.session_state.show_transform_button = True
 
-if "ats_score" in st.session_state:
-    st.markdown("### 📊 Analysis Results")
-    st.write(f"**ATS Score:** {st.session_state.ats_score}")
-    st.write(f"**Match Score:** {st.session_state.match_score}")
+    if "ats_score" in st.session_state:
+        st.markdown("### 📊 Analysis Results")
+        st.write(f"**ATS Score:** {st.session_state.ats_score}")
+        st.write(f"**Match Score:** {st.session_state.match_score}")
 
-    st.subheader("✅ Strengths")
-    for s in st.session_state.suggestions["strengths"]:
-        st.write(f"- {s}")
+    if "suggestions" in st.session_state:
+        st.markdown("### 📢 AI Suggestions")
+
+    if isinstance(st.session_state.suggestions, dict):
+        if "strengths" in st.session_state.suggestions:
+            st.subheader("✅ Strengths")
+            for s in st.session_state.suggestions["strengths"]:
+                st.write(f"- {s}")
+
+        if "improvements" in st.session_state.suggestions:
+            st.subheader("🛠️ Areas to Improve")
+            for s in st.session_state.suggestions["improvements"]:
+                st.write(f"- {s}")
+
+        if "overall" in st.session_state.suggestions:
+            st.subheader("📢 Overall Suggestion")
+            st.write(st.session_state.suggestions["overall"])
+    else:
+        st.write(st.session_state.suggestions)
+
 
     st.subheader("🛠️ Areas to Improve")
     for s in st.session_state.suggestions["improvements"]:

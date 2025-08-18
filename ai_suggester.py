@@ -135,6 +135,7 @@ def _json_schema_prompt(missing_kw: List[str], target_score: int, job_desc: str,
 You will transform the resume for the given job description and return STRICT JSON ONLY.
 
 RULES:
+- Give ATS Score with details like what are the strong points in the resume and what are the weak points in the resume.Also tell that resume have some lines which can be rephrased or there is grammatical mistakes.
 - Keep truthful, no fake experience.
 - Do not remove candidate's real projects or education, only reformat.
 - Use exactly the degree and university name from the uploaded resume in Summary and Education. Do not change, do not replace, do not invent.

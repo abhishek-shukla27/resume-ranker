@@ -109,10 +109,17 @@ if resume_file and job_desc_input.strip():
 
 # --- AI Suggestions ---
 if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
-    suggestions = get_suggestions(st.session_state.resume_text, st.session_state.job_desc)
-    st.markdown("### 📢 AI Suggestions")
-    st.write(suggestions)
+    st.session_state.suggestions = get_suggestions(
+        st.session_state.resume_text,
+        st.session_state.job_desc
+    )
     st.session_state.show_transform_button = True
+
+# Always show AI suggestions if available
+if "suggestions" in st.session_state:
+    st.markdown("### 📢 AI Suggestions")
+    st.write(st.session_state.suggestions)
+
 
 # --- Transform Resume ---
 if st.session_state.get("show_transform_button"):

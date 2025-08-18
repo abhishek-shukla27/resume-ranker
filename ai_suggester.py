@@ -145,6 +145,7 @@ RULES:
 - Add each project from the uploaded resume do not remove the projects and do not change their original name.
 - Each project must have exactly 3 bullet points: Objective, Tech Stack, Features.
 - Education must have only top 2 qualifications (latest first) with degree full form, university/school name, and academic year.
+- Do not add experience section from your own. Only add if there is experience section in the uploaded resume other wise skip. 
 - Insert missing keywords naturally: {missing_str}
 - Target ATS score: {target_score}+.
 - Return ONLY the JSON.

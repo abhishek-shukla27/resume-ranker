@@ -109,11 +109,20 @@ if resume_file and job_desc_input.strip():
 
 # --- AI Suggestions ---
 if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
-    st.session_state.suggestions = get_suggestions(
+    
+    ats_score,match_score,suggestions = get_suggestions(
         st.session_state.resume_text,
         st.session_state.job_desc
     )
+    st.session_state.ats_score=ats_score
+    st.session_state.match_score=match_score
+    st.session_state.suggestions=suggestions
     st.session_state.show_transform_button = True
+
+if "ats_score" in st.session_state:
+    st.markdown("### 📊 Analysis Results")
+    st.write(f"**ATS Score:** {st.session_state.ats_score}")
+    st.write(f"**Match Score:** {st.session_state.match_score}")
 
 # Always show AI suggestions if available
 if "suggestions" in st.session_state:

@@ -149,9 +149,7 @@ if "resume_text" in st.session_state and st.button("🔍 Get AI Suggestions"):
         st.write(st.session_state.suggestions)
 
 
-    st.subheader("🛠️ Areas to Improve")
-    for s in st.session_state.suggestions["improvements"]:
-        st.write(f"- {s}")
+    
 
 
 # Always show AI suggestions if available

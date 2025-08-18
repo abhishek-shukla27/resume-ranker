@@ -124,6 +124,15 @@ if "ats_score" in st.session_state:
     st.write(f"**ATS Score:** {st.session_state.ats_score}")
     st.write(f"**Match Score:** {st.session_state.match_score}")
 
+    st.subheader("✅ Strengths")
+    for s in st.session_state.suggestions["strengths"]:
+        st.write(f"- {s}")
+
+    st.subheader("🛠️ Areas to Improve")
+    for s in st.session_state.suggestions["improvements"]:
+        st.write(f"- {s}")
+
+
 # Always show AI suggestions if available
 if "suggestions" in st.session_state:
     st.markdown("### 📢 AI Suggestions")

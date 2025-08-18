@@ -32,11 +32,16 @@ Job Description:
 {job_description}
 
 Give your feedback in the following format:
-🤖 ATS Score (out of 100)
+🤖 ATS Score (number out of 100)
 ✅ Match Score (out of 10)
-⭐ Strengths
-🛠️ Areas to Improve
-📢 Overall Suggestion
+⭐ Strengths:
+- point 1
+- point 2
+🛠️ Areas to Improve:
+- point 1
+- point 2
+📢 Overall Suggestion:
+Your 2-3 line summary
 """
 
         payload = {
@@ -45,7 +50,7 @@ Give your feedback in the following format:
                 {"role": "system", "content": "You are a helpful resume evaluator."},
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.7
+            "temperature": 0
         }
 
         resp = requests.post(BASE_URL, headers={

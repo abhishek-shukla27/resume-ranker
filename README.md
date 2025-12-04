@@ -27,7 +27,7 @@
 ### Resume Score & Suggestions
 ![Resume Score](screenshots/score.png)
 
-> img/Screenshot (11).png
+> img/screenshot(11).png
 
 ---
 

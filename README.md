@@ -46,7 +46,7 @@
 1. **Upload Resume & Job Description:** Users upload their resume and the corresponding job description.
 2. **Analysis:** The AI model analyzes the resume for keyword alignment, formatting, and content relevance.
 3. **Score & Suggestions:** Users receive a score and actionable suggestions to improve their resume.
-4. **Track Progress:** Registered users can track improvements over multiple analyses.
+4. **Transform Your Resume Into AN ATS-Friendly Format:**  Users can transform there resume according to JD into ATS friendly template.
 
 ---
 
@@ -56,3 +56,25 @@
    ```bash
    git clone https://github.com/your-username/resume-ranker.git
    cd resume-ranker
+
+
+2. Create a virtual environment and install dependencies:
+
+python -m venv venv
+source venv/bin/activate   # Linux / Mac
+venv\Scripts\activate      # Windows
+pip install -r requirements.txt
+
+3. Run the Streamlit app:
+streamlit run app.py
+
+---
+🔮Future Enhancements
+
+-**Add payment gateway for premium features**.
+
+-**Real-time AI suggestions while editing the resume**.
+
+-**Multi-language resume optimization.**
+
+-**LinkedIn integration for automatic suggestions.**

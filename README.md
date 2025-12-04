@@ -22,12 +22,12 @@
 ## 🖥️ Demo / Screenshots
 
 ### Upload & Analysis
-![Upload Resume](C:\Users\Abhishek SHUKLA\OneDrive\Desktop\resume-ranker\resume-ranker\img)
+![Upload Resume]
 
 ### Resume Score & Suggestions
 ![Resume Score](screenshots/score.png)
 
-> Replace these with your actual screenshots under a `screenshots/` folder.
+> C:\Users\Abhishek SHUKLA\OneDrive\Desktop\resume-ranker\resume-ranker\img
 
 ---
 

@@ -27,7 +27,7 @@
 ### Resume Score & Suggestions
 ![Resume Score](screenshots/score.png)
 
-> C:\Users\Abhishek SHUKLA\OneDrive\Desktop\resume-ranker\resume-ranker\img
+> img/Screenshot (11).png
 
 ---
 

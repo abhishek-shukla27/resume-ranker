@@ -22,12 +22,12 @@
 ## 🖥️ Demo / Screenshots
 
 ### Upload & Analysis
-![Upload Resume]
+![Upload Resume](img/screenshot-11.png)
 
 ### Resume Score & Suggestions
 ![Resume Score](screenshots/score.png)
 
-> img/screenshot-11.png
+> 
 
 ---
 

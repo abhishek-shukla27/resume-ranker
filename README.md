@@ -59,11 +59,11 @@
 
 
 2. Create a virtual environment and install dependencies:
-
-python -m venv venv
-source venv/bin/activate   # Linux / Mac
-venv\Scripts\activate      # Windows
-pip install -r requirements.txt
+    ```bash
+        python -m venv venv
+        source venv/bin/activate   # Linux / Mac
+        venv\Scripts\activate      # Windows
+        pip install -r requirements.txt
 
 3. Run the Streamlit app:
 streamlit run app.py

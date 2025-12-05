@@ -102,7 +102,9 @@ for details.
 ## 📫 Contact
 
 Developer: Abhishek Shukla
+
 -Email:abhishekshukla2711@gmail.com
+
 -LinkedIn:(www.linkedin.com/in/abhishek-shukla-062164299)
 
 ## 🌐 Live Demo

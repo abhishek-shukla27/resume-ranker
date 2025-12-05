@@ -66,10 +66,11 @@
         pip install -r requirements.txt
 
 3. Run the Streamlit app:
-streamlit run app.py
+    ```bash
+        streamlit run app.py
 
 ---
-🔮Future Enhancements
+## 🔮Future Enhancements
 
 -**Add payment gateway for premium features**.
 
@@ -78,3 +79,32 @@ streamlit run app.py
 -**Multi-language resume optimization.**
 
 -**LinkedIn integration for automatic suggestions.**
+
+## 🤝 Contributing
+
+-Contributions are welcome! To contribute:
+
+-Fork the repository.
+
+-Create a branch (git checkout -b feature-name).
+
+-Commit your changes (git commit -m 'Add some feature').
+
+-Push to the branch (git push origin feature-name).
+
+-Open a pull request.
+
+## 📄 License
+
+This project is licensed under the MIT License. See LICENSE
+for details.
+
+## 📫 Contact
+
+Developer: Abhishek Shukla
+Email:abhishekshukla2711@gmail.com
+LinkedIn:[Link](www.linkedin.com/in/abhishek-shukla-062164299)
+
+## 🌐 Live Demo
+
+[Live Link](https://resume-ranker-auth.web.app/)

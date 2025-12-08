@@ -22,7 +22,8 @@
 ## 🖥️ Demo / Screenshots
 
 ### Upload & Analysis
-![Upload Resume](img/screenshot-11.png)
+![Login Page](img/screenshot-11.png)
+![Upload Resume](img/screenshot-12.png)
 
 ### Resume Score & Suggestions
 ![Resume Score](screenshots/score.png)

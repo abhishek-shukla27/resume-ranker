@@ -10,7 +10,7 @@ import re
 load_dotenv()
 
 API_KEY = os.getenv("GROQ_API_KEY")
-MODEL_NAME = "llama3-8b-8192"
+MODEL_NAME = "openai/gpt-oss-120b"
 BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # ------------------- AI Suggestions ------------------- #

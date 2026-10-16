@@ -1,7 +1,7 @@
 # Resume Ranker - AI-Powered Resume Analysis & Optimization Tool
 
 [![Python](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-UI-orange.svg)](https://streamlit.io/)
+[![Next.js](https://img.shields.io/badge/Next.js-UI-black.svg)](https://nextjs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Resume Ranker** is an AI-driven web application that analyzes resumes against job descriptions and provides actionable feedback to improve your chances of getting noticed by recruiters.
@@ -34,10 +34,10 @@
 
 ## ⚙️ Tech Stack
 
-- **Frontend:** Streamlit  
+- **Frontend:** Next.js (React + Tailwind CSS)
 - **Backend:** FastAPI / Python  
-- **AI Models:** Groq API with Mixtral-8x7B for fast NLP processing  
-- **Authentication:** Firebase Admin SDK (Google Login)  
+- **AI Models:** Groq API with GPT-OSS / Mixtral for fast NLP processing  
+- **Authentication:** Firebase Auth (Web SDK + Admin SDK)  
 - **Database:** Firestore  
 
 ---
@@ -57,18 +57,28 @@
    ```bash
    git clone https://github.com/your-username/resume-ranker.git
    cd resume-ranker
+   ```
 
+2. Backend (FastAPI):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate   # Linux / Mac
+   venv\Scripts\activate      # Windows
+   pip install -r requirements.txt
+   uvicorn main:app --reload --port 8000
+   ```
 
-2. Create a virtual environment and install dependencies:
-    ```bash
-        python -m venv venv
-        source venv/bin/activate   # Linux / Mac
-        venv\Scripts\activate      # Windows
-        pip install -r requirements.txt
+3. Frontend (Next.js):
+   ```bash
+   cd resume-ranker-frontend
+   npm install
+   # copy .env.example to .env.local and fill in the values
+   npm run dev
+   ```
 
-3. Run the Streamlit app:
-    ```bash
-        streamlit run app.py
+   Open http://localhost:3000
+
+> See [MIGRATION.md](MIGRATION.md) for details on the Streamlit → Next.js migration.
 
 ---
 ## 🔮Future Enhancements

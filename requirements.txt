@@ -1,8 +1,6 @@
-streamlit==1.35.0
 python-dotenv==1.0.1
 groq==0.30.0
 PyMuPDF
-streamlit-extras
 firebase-admin
 pyrebase4
 pycryptodome
@@ -12,3 +10,6 @@ reportlab
 python-docx
 pdf2docx
 textblob
+fastapi
+uvicorn[standard]
+python-multipart

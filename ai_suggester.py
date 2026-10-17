@@ -335,3 +335,104 @@ def _dict_to_plain_text(data: Dict[str, Any]) -> str:
         parts.append("\nCertifications:")
         parts.append(", ".join(map(str, data["certifications"])))
     return "\n".join([p for p in parts if str(p).strip()])
+
+
+# ------------------- Structured Feedback ------------------- #
+def get_suggestions_structured(resume_text, job_description):
+    """Get AI feedback as structured JSON."""
+    try:
+        if not API_KEY:
+            return {
+                "ats_score": 0,
+                "match_score": 0,
+                "strengths": [],
+                "improvements": ["❌ GROQ_API_KEY not found in environment."],
+                "overall": "Error: GROQ_API_KEY not found",
+            }
+
+        prompt = f"""
+You are a helpful AI assistant reviewing a resume for a job application.
+Evaluate the resume against the job description and provide actionable suggestions.
+Return ONLY valid JSON with this schema:
+
+{{
+  "ats_score": 85,
+  "match_score": 8,
+  "strengths": ["point 1", "point 2"],
+  "improvements": ["point 1", "point 2"],
+  "overall": "2-3 line summary"
+}}
+
+Constraints: ats_score is number 0-100, match_score is number 0-10.
+
+Resume:
+{resume_text}
+
+Job Description:
+{job_description}
+"""
+
+        payload = {
+            "model": MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": "You are a resume evaluator. Return only JSON."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0,
+            "response_format": {"type": "json_object"},
+        }
+
+        resp = requests.post(
+            BASE_URL,
+            headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=60,
+        ).json()
+
+        if "error" in resp:
+            return {
+                "ats_score": 0,
+                "match_score": 0,
+                "strengths": [],
+                "improvements": [resp["error"].get("message", "Unknown error")],
+                "overall": "API error",
+            }
+
+        if "choices" not in resp or not resp["choices"]:
+            return {
+                "ats_score": 0,
+                "match_score": 0,
+                "strengths": [],
+                "improvements": ["No response from AI model."],
+                "overall": "No response",
+            }
+
+        content = resp["choices"][0]["message"]["content"].strip()
+        parsed = _safe_json_loads(_extract_json(content)) if "{" in content else None
+        if not parsed:
+            return {
+                "ats_score": 0,
+                "match_score": 0,
+                "strengths": [],
+                "improvements": ["Failed to parse AI response"],
+                "overall": content[:200],
+            }
+
+        ats = parsed.get("ats_score")
+        match = parsed.get("match_score")
+        return {
+            "ats_score": int(ats) if ats is not None else 0,
+            "match_score": match if match is not None else 0,
+            "strengths": _ensure_list(parsed.get("strengths")),
+            "improvements": _ensure_list(parsed.get("improvements")),
+            "overall": str(parsed.get("overall", "")) if parsed.get("overall") else "",
+        }
+
+    except Exception as e:
+        return {
+            "ats_score": 0,
+            "match_score": 0,
+            "strengths": [],
+            "improvements": [f"AI Suggestion Failed: {str(e)}"],
+            "overall": "Error",
+        }

@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Resume Ranker — Frontend
 
-## Getting Started
+Next.js (App Router) frontend for **Resume Ranker**. Handles Google authentication
+(Firebase Web SDK) and the upload → analyze → transform workflow, talking to the
+FastAPI backend at `NEXT_PUBLIC_API_URL`.
 
-First, run the development server:
+## Requirements
+
+- Node.js 20+
+- The backend running (see the repo root `README.md` / `MIGRATION.md`)
+
+## Setup
 
 ```bash
+npm install
+# Create .env.local and set your REAL Firebase project values.
+# Do NOT keep the placeholder values from .env.example, or login will fail
+# with "auth/api-key-not-valid".
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> `NEXT_PUBLIC_*` variables are inlined when the dev/build server starts, so always
+> **restart** `npm run dev` after editing `.env.local`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the FastAPI backend (e.g. `http://localhost:8000`) |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Web config |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Web config |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Web config |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase Web config |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase Web config |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase Web config |
 
-To learn more about Next.js, take a look at the following resources:
+> Firebase Web config values are public (they ship to the browser). Never put the
+> Firebase **Admin** service-account JSON here.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev     # start dev server
+npm run build   # production build
+npm run start   # run the production build
+npm run lint    # eslint
+```
 
-## Deploy on Vercel
+## Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+  app/
+    layout.tsx            # root layout + AuthProvider
+    page.tsx              # landing / login
+    dashboard/page.tsx    # analysis dashboard
+    globals.css           # Tailwind v4 + theme
+  components/
+    AuthProvider.tsx      # Firebase auth context
+    Header.tsx
+    LoginButton.tsx
+    Dashboard.tsx
+    ScoreRing.tsx
+  lib/
+    firebase.ts           # Firebase Web SDK init
+    api.ts                # backend client (attaches Bearer token)
+    types.ts
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Authentication
+
+Users sign in with Google via the Firebase Web SDK. Each backend request includes a
+fresh ID token as `Authorization: Bearer <token>`, which the FastAPI backend verifies
+with the Firebase Admin SDK.
+
+## Troubleshooting login
+
+### `Firebase: Error (auth/api-key-not-valid...)`
+
+`.env.local` still has the placeholder values from `.env.example`. Put your **real**
+Firebase Web config in `.env.local` and **restart** `npm run dev` (`NEXT_PUBLIC_*`
+vars are inlined at startup).
+
+### `Firebase: Error (auth/unauthorized-domain)`
+
+The origin you're browsing from isn't in the project's authorized domains. For
+projects created after **April 28, 2025**, `localhost` is **not** added by default.
+
+1. Firebase Console → **Authentication** → **Settings** → **Authorized domains**
+2. Click **Add domain** and add `localhost` (and `127.0.0.1` if you use that host)
+3. Add your deployed domain too (e.g. `your-app.vercel.app`)
+
+> Add only the host — no protocol and no port (`localhost`, **not**
+> `http://localhost:3000`). Then retry login; no code changes required.
